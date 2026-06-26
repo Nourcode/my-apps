@@ -1,0 +1,32 @@
+# my-apps — Project Overview
+
+## What this is
+A personal **App Hub / App Directory** — a single web page that lists every app the owner uses (Discord, Instagram, GitHub, n8n, Gmail, Claude, etc.), displays each app's logo, and provides a clean visual reference to see everything at a glance.
+
+**The problem it solves:** Too many apps, hard to keep track of, overwhelming. This page acts as a single source of truth.
+
+## Current scope (v1)
+- Personal use only
+- One page, static list of apps
+- Each app shown as a card with its logo and name
+- Clean, modern design
+
+## Future vision
+- Member space with authentication (login / signup)
+- Offer the solution to clients and other users as a SaaS product
+- Multi-user support
+
+## Tech stack
+- **Next.js** — React-based framework (routing, future API routes, auth-ready)
+- **Tailwind CSS** — Utility-first styling for fast, consistent UI
+- **Deployment:** Vercel (free tier)
+
+## Design principles
+- Keep the UI simple and scannable
+- Prioritize visual identity (logos, brand colors)
+- Design with future auth/multi-user in mind — but do not over-engineer for it yet
+- Detailed design decisions are documented in `DESIGN.md`
+
+## File location rule
+All project notes, design docs, and memory files must be created **inside this project folder** so they are tracked by Git and synced via GitHub.
+Never save project context to `~/.claude/` — those files are local only and won't sync.
