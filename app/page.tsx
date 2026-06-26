@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import catalog, { type App } from "./catalog";
 
 type PaymentPeriod = "monthly" | "annually" | "once";
-type Payment = { type: "free" | "paid"; amount?: string; currency?: string; period?: PaymentPeriod };
+type Payment = {
+  type: "free" | "paid";
+  amount?: string;
+  currency?: string;
+  period?: PaymentPeriod;
+  day?: number;
+  month?: number;
+};
 type Payments = Record<string, Payment>;
 
 const CURRENCIES = [
@@ -66,9 +73,11 @@ function MoonIcon() {
 function ShareIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-      <polyline points="16 6 12 2 8 6"/>
-      <line x1="12" y1="2" x2="12" y2="15"/>
+      <circle cx="18" cy="5" r="3"/>
+      <circle cx="6" cy="12" r="3"/>
+      <circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
     </svg>
   );
 }
@@ -111,6 +120,16 @@ function TrashIcon({ size = 15 }: { size?: number }) {
   );
 }
 
+function UploadIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatPaidLabel(amount: string, currency: string, period?: PaymentPeriod): string {
@@ -129,6 +148,24 @@ function formatPaidLabel(amount: string, currency: string, period?: PaymentPerio
 function paymentLabel(payment: Payment): string {
   if (payment.type === "free") return "Free";
   return formatPaidLabel(payment.amount ?? "", payment.currency ?? "USD", payment.period);
+}
+
+const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function ordinal(n: number): string {
+  const v = n % 100;
+  return n + (["th","st","nd","rd"][(v - 20) % 10] || ["th","st","nd","rd"][v] || "th");
+}
+
+function paymentDueLabel(payment: Payment): string | null {
+  if (payment.type === "free" || !payment.day) return null;
+  if (payment.period === "annually" && payment.month) {
+    return `due ${MONTH_SHORT[payment.month - 1]} ${ordinal(payment.day)}`;
+  }
+  if (payment.period === "monthly") {
+    return `due ${ordinal(payment.day)}`;
+  }
+  return null;
 }
 
 // ─── Payment badge ────────────────────────────────────────────────────────────
@@ -157,6 +194,9 @@ export default function Home() {
   const [payAmountDraft, setPayAmountDraft] = useState("");
   const [payCurrencyDraft, setPayCurrencyDraft] = useState("USD");
   const [payPeriodDraft, setPayPeriodDraft] = useState<PaymentPeriod>("monthly");
+  const [payDayDraft, setPayDayDraft] = useState("");
+  const [payMonthDraft, setPayMonthDraft] = useState("");
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalTag, setAddModalTag] = useState<string | null>(null);
@@ -233,6 +273,36 @@ export default function Home() {
     showToast("Exported!");
   }
 
+  function importApps(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (!Array.isArray(data)) throw new Error("not an array");
+        const validNames: string[] = [];
+        const newUrls: Record<string, string> = {};
+        const newPayments: Payments = {};
+        for (const item of data) {
+          const catalogApp = catalog.find((a) => a.name === item.name);
+          if (!catalogApp) continue;
+          validNames.push(item.name);
+          if (item.url && item.url !== catalogApp.url) newUrls[item.name] = item.url;
+          if (item.payment) newPayments[item.name] = item.payment;
+        }
+        setMyAppNames(validNames);
+        setCustomUrls(newUrls);
+        setPayments(newPayments);
+        localStorage.setItem("my-app-list", JSON.stringify(validNames));
+        localStorage.setItem("custom-urls", JSON.stringify(newUrls));
+        localStorage.setItem("app-payments", JSON.stringify(newPayments));
+        showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
+      } catch {
+        showToast("Invalid file — import failed.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
   function openDeleteModal(type: "all" | "category", tag?: string) {
     setDeleteTarget({ type, tag });
     setDeleteInput("");
@@ -289,6 +359,8 @@ export default function Home() {
     setPayAmountDraft(pay?.amount ?? "");
     setPayCurrencyDraft(pay?.currency ?? "USD");
     setPayPeriodDraft(pay?.period ?? "monthly");
+    setPayDayDraft(pay?.day ? String(pay.day) : "");
+    setPayMonthDraft(pay?.month ? String(pay.month) : "");
   }
 
   function saveEdit() {
@@ -301,7 +373,14 @@ export default function Home() {
       [editing]:
         payTypeDraft === "free"
           ? { type: "free" }
-          : { type: "paid", amount: payAmountDraft, currency: payCurrencyDraft, period: payPeriodDraft },
+          : {
+              type: "paid",
+              amount: payAmountDraft,
+              currency: payCurrencyDraft,
+              period: payPeriodDraft,
+              ...(payDayDraft ? { day: parseInt(payDayDraft) } : {}),
+              ...(payMonthDraft && payPeriodDraft === "annually" ? { month: parseInt(payMonthDraft) } : {}),
+            },
     };
     setPayments(updatedPayments);
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
@@ -325,6 +404,28 @@ export default function Home() {
 
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
+  // Stats
+  const statsRecurring: Record<string, number> = {};
+  const statsOneTime: Record<string, number> = {};
+  for (const name of myAppNames) {
+    const pay = payments[name];
+    if (!pay || pay.type !== "paid" || !pay.amount) continue;
+    const amt = parseFloat(pay.amount);
+    if (isNaN(amt)) continue;
+    const cur = pay.currency || "USD";
+    if (pay.period === "monthly") {
+      statsRecurring[cur] = (statsRecurring[cur] || 0) + amt;
+    } else if (pay.period === "annually") {
+      statsRecurring[cur] = (statsRecurring[cur] || 0) + amt / 12;
+    } else if (pay.period === "once") {
+      statsOneTime[cur] = (statsOneTime[cur] || 0) + amt;
+    }
+  }
+
+  function fmtCurrency(amount: number, currency: string) {
+    return new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+  }
+
   const d = isDark;
   const inputCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`;
   const selectCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors appearance-none ${d ? "bg-white/5 border-white/10 text-white focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 focus:border-black/20"}`;
@@ -341,19 +442,50 @@ export default function Home() {
             <TrashIcon />
           </button>
           <button onClick={shareApps} title="Share hub"
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-medium transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             <ShareIcon />
+            <span>Share</span>
+          </button>
+          <button onClick={() => importInputRef.current?.click()} title="Import from JSON"
+            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            <UploadIcon />
           </button>
           <button onClick={exportApps} title="Export as JSON"
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             <DownloadIcon />
           </button>
+          <input ref={importInputRef} type="file" accept=".json,application/json" className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) importApps(file);
+              e.target.value = "";
+            }}
+          />
           <button onClick={toggleTheme} title={d ? "Switch to light mode" : "Switch to dark mode"}
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             {d ? <SunIcon /> : <MoonIcon />}
           </button>
         </div>
       </div>
+
+      {/* Stats bar */}
+      {myAppNames.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+            {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
+          </span>
+          {Object.entries(statsRecurring).map(([cur, amt]) => (
+            <span key={cur} className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}>
+              ≈ {fmtCurrency(amt, cur)}/mo
+            </span>
+          ))}
+          {Object.entries(statsOneTime).map(([cur, amt]) => (
+            <span key={cur} className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+              {fmtCurrency(amt, cur)} one-time
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
@@ -428,7 +560,7 @@ export default function Home() {
                     />
                   ))}
                   <button onClick={() => openAddModal(tag)}
-                    className={`flex flex-col items-center gap-3 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-white/40 hover:text-white/50" : "border-black/20 text-black/25 hover:border-black/35 hover:text-black/40"}`}>
+                    className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-white/40 hover:text-white/50" : "border-black/20 text-black/25 hover:border-black/35 hover:text-black/40"}`}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
                     <span className="text-xs font-medium">Add</span>
                   </button>
@@ -523,6 +655,34 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+
+                {(payPeriodDraft === "monthly" || payPeriodDraft === "annually") && (
+                  <div className={`pt-3 mt-1 border-t ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                      Billing date <span className="normal-case font-normal opacity-60">— optional</span>
+                    </p>
+                    <div className="flex gap-2">
+                      {payPeriodDraft === "annually" && (
+                        <div className="relative flex-1">
+                          <select value={payMonthDraft} onChange={(e) => setPayMonthDraft(e.target.value)} className={selectCls}>
+                            <option value="">Month</option>
+                            {MONTH_SHORT.map((m, i) => (
+                              <option key={i} value={String(i + 1)}>{m}</option>
+                            ))}
+                          </select>
+                          <div className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        type="number" min="1" max="31" placeholder="Day"
+                        value={payDayDraft} onChange={(e) => setPayDayDraft(e.target.value)}
+                        className={`${payPeriodDraft === "annually" ? "flex-1" : "w-full"} text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -651,7 +811,11 @@ function AppCard({ app, url, payment, d, onEdit, onRemove }: {
   app: App; url: string; payment?: Payment; d: boolean;
   onEdit: () => void; onRemove: () => void;
 }) {
-  const tooltipMeta = [app.brand, payment ? paymentLabel(payment) : null]
+  const tooltipMeta = [
+    app.brand,
+    payment ? paymentLabel(payment) : null,
+    payment ? paymentDueLabel(payment) : null,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -668,11 +832,16 @@ function AppCard({ app, url, payment, d, onEdit, onRemove }: {
       </div>
 
       <a href={url} target="_blank" rel="noopener noreferrer"
-        className={`flex flex-col items-center gap-2 rounded-2xl p-4 border hover:scale-105 transition-all duration-200 ${d ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white border-black/[0.08] hover:bg-[#eeece8]"}`}>
+        className={`flex flex-col items-center justify-center gap-2 h-36 rounded-2xl p-4 border hover:scale-105 transition-all duration-200 ${d ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white border-black/[0.08] hover:bg-[#eeece8]"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
         <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
         {payment && <PaymentBadge payment={payment} d={d} />}
+        {payment && paymentDueLabel(payment) && (
+          <span className={`text-[10px] leading-none ${d ? "text-gray-500" : "text-gray-400"}`}>
+            {paymentDueLabel(payment)}
+          </span>
+        )}
       </a>
 
       <button onClick={onEdit} title="Edit"
