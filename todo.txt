@@ -1,0 +1,42 @@
+Last time edited (per app)
+app.ts file
+how does the save function (cookie?)
+notes not showing in tooltip
+
+
+Notes on hover — notes appear in the tooltip in amber italic text, separated by a thin dividing line from the rest of the meta. The amber color makes it visually distinct from the gray description and payment info.
+
+App status — Active / Trial / Cancelled selector in the modal, right above Payment. No badge shown for Active (it's the default). Trial shows a violet "Trial" badge on the card. Cancelled dims the whole card to 50% opacity and shows a gray "Cancelled" chip. The payment badge hides on Trial/Cancelled since the status tells the story.
+
+Billing alerts — a small pulsing orange dot appears in the top-left of a card when payment is due within 7 days. The due date text on the card also turns orange. The tooltip adds "Due in 3d" or "Due today!" to the meta line. Cancelled apps never show the alert.
+
+Keyboard shortcut — press / or ⌘K from anywhere on the page to jump to search. Escape clears and blurs it. A subtle ⌘K hint shows inside the search bar on desktop (hidden on mobile where it doesn't apply).
+
+Feature suggestions
+
+Based on everything built so far, here are the ones I think would add real value:
+
+1. App status — Active / Trial / Cancelled
+You could mark an app as cancelled without removing it. Cancelled apps show greyed out or in a collapsed "Archive" section. Useful for tracking what you've tried and why you stopped, especially with the notes field now available.
+
+2. Upcoming billing alerts
+Since you already track billing dates, cards could show a small amber dot or "due in 3 days" label when a payment is within 7 days. Requires no new data — just a date comparison at render time.
+
+3. Pin / prioritize apps
+Let certain apps always appear first in their category. The apps you open daily (Discord, Gmail) shouldn't need scrolling past ones you barely use.
+
+4. Keyboard shortcut for search
+Press / or Cmd+K anywhere on the page to focus the main search bar. Standard in any tool people use frequently — no UI change needed, just a keydown listener.
+
+5. Trial expiry tracking
+A "Trial ends" date field in the payment sechows a countdown badge on the card. Extremely easy to forget free trials until you get charged.
+
+6. Account field
+Which email you use for each app. A lot of paccounts and mix them up. One small textfield in the modal, shown in the tooltip.
+
+7. Export to calendar
+Generate an .ics file from all billing datesndar / Google Calendar as recurringreminders. Zero infrastructure needed — pure client-side file generation.
+
+8. Cost breakdown view
+A dedicated panel or slide-out that shows: tost per category ranked, and free vs paidratio. You have all the data already — it's just a different presentation of what's in the stats bar.                 
+The ones I'd prioritize first: billing alerts (highest impact, zero new data needed), app status (natural extension of the payment system), and keyboard shortcut (aily use).

@@ -12,6 +12,9 @@ type Payment = {
   month?: number;
 };
 type Payments = Record<string, Payment>;
+type AppStatus = "active" | "trial" | "cancelled";
+type Statuses = Record<string, AppStatus>;
+type DeleteTarget = { type: "all" | "category" | "selected"; tag?: string };
 
 const CURRENCIES = [
   { code: "USD", name: "US Dollar" },
@@ -49,6 +52,8 @@ const CURRENCIES = [
   { code: "CLP", name: "Chilean Peso" },
   { code: "ARS", name: "Argentine Peso" },
 ];
+
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -91,23 +96,6 @@ function DownloadIcon() {
   );
 }
 
-function PencilIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18M6 6l12 12"/>
-    </svg>
-  );
-}
-
 function TrashIcon({ size = 15 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -125,6 +113,33 @@ function UploadIcon() {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
       <polyline points="17 8 12 3 7 8"/>
       <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  );
+}
+
+function CheckSquareIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m9 11 3 3L22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </svg>
+  );
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
     </svg>
   );
 }
@@ -167,6 +182,23 @@ function paymentDueLabel(payment: Payment): string | null {
   return null;
 }
 
+function getDaysUntilDue(payment: Payment): number | null {
+  if (payment.type !== "paid" || !payment.day) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (payment.period === "monthly") {
+    let due = new Date(today.getFullYear(), today.getMonth(), payment.day);
+    if (due < today) due = new Date(today.getFullYear(), today.getMonth() + 1, payment.day);
+    return Math.round((due.getTime() - today.getTime()) / 86400000);
+  }
+  if (payment.period === "annually" && payment.month) {
+    let due = new Date(today.getFullYear(), payment.month - 1, payment.day);
+    if (due < today) due = new Date(today.getFullYear() + 1, payment.month - 1, payment.day);
+    return Math.round((due.getTime() - today.getTime()) / 86400000);
+  }
+  return null;
+}
+
 // ─── Payment badge ────────────────────────────────────────────────────────────
 
 function PaymentBadge({ payment, currency, d }: { payment: Payment; currency: string; d: boolean }) {
@@ -195,14 +227,22 @@ export default function Home() {
   const [payPeriodDraft, setPayPeriodDraft] = useState<PaymentPeriod>("monthly");
   const [payDayDraft, setPayDayDraft] = useState("");
   const [payMonthDraft, setPayMonthDraft] = useState("");
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [notesDraft, setNotesDraft] = useState("");
+  const [statuses, setStatuses] = useState<Statuses>({});
+  const [statusDraft, setStatusDraft] = useState<AppStatus>("active");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const importInputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalTag, setAddModalTag] = useState<string | null>(null);
+  const [addModalSearch, setAddModalSearch] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "all" | "category"; tag?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteInput, setDeleteInput] = useState("");
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -217,6 +257,10 @@ export default function Home() {
     if (savedPayments) setPayments(JSON.parse(savedPayments));
     const savedCurrency = localStorage.getItem("app-currency");
     if (savedCurrency) setCurrency(savedCurrency);
+    const savedNotes = localStorage.getItem("app-notes");
+    if (savedNotes) setNotes(JSON.parse(savedNotes));
+    const savedStatuses = localStorage.getItem("app-statuses");
+    if (savedStatuses) setStatuses(JSON.parse(savedStatuses));
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
   }, []);
 
@@ -224,6 +268,22 @@ export default function Home() {
     document.body.style.background = isDark ? "#0d0d0d" : "#f7f6f3";
     document.body.style.transition = "background 0.2s";
   }, [isDark]);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -239,6 +299,19 @@ export default function Home() {
   function changeCurrency(code: string) {
     setCurrency(code);
     localStorage.setItem("app-currency", code);
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedApps(new Set());
+  }
+
+  function toggleSelect(name: string) {
+    setSelectedApps((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
   }
 
   function shareApps() {
@@ -268,13 +341,14 @@ export default function Home() {
         tags: app.tags,
         description: app.description,
         payment: payments[app.name] ?? null,
-        currency,
+        notes: notes[app.name] ?? null,
+        status: statuses[app.name] ?? null,
       }));
     const blob = new Blob([JSON.stringify({ currency, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "my-apps.json";
+    a.download = "helio-apps.json";
     a.click();
     URL.revokeObjectURL(url);
     showToast("Exported!");
@@ -285,26 +359,33 @@ export default function Home() {
     reader.onload = (e) => {
       try {
         const raw = JSON.parse(e.target?.result as string);
-        // support both old array format and new {currency, apps} format
         const data = Array.isArray(raw) ? raw : raw.apps;
         if (!Array.isArray(data)) throw new Error("invalid");
         const validNames: string[] = [];
         const newUrls: Record<string, string> = {};
         const newPayments: Payments = {};
+        const newNotes: Record<string, string> = {};
+        const newStatuses: Statuses = {};
         for (const item of data) {
           const catalogApp = catalog.find((a) => a.name === item.name);
           if (!catalogApp) continue;
           validNames.push(item.name);
           if (item.url && item.url !== catalogApp.url) newUrls[item.name] = item.url;
           if (item.payment) newPayments[item.name] = item.payment;
+          if (item.notes) newNotes[item.name] = item.notes;
+          if (item.status) newStatuses[item.name] = item.status;
         }
         if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
         setMyAppNames(validNames);
         setCustomUrls(newUrls);
         setPayments(newPayments);
+        setNotes(newNotes);
+        setStatuses(newStatuses);
         localStorage.setItem("my-app-list", JSON.stringify(validNames));
         localStorage.setItem("custom-urls", JSON.stringify(newUrls));
         localStorage.setItem("app-payments", JSON.stringify(newPayments));
+        localStorage.setItem("app-notes", JSON.stringify(newNotes));
+        localStorage.setItem("app-statuses", JSON.stringify(newStatuses));
         showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
       } catch {
         showToast("Invalid file — import failed.");
@@ -313,28 +394,56 @@ export default function Home() {
     reader.readAsText(file);
   }
 
-  function openDeleteModal(type: "all" | "category", tag?: string) {
+  function openDeleteModal(type: DeleteTarget["type"], tag?: string) {
     setDeleteTarget({ type, tag });
     setDeleteInput("");
   }
 
   function confirmDelete() {
     if (deleteInput !== "DELETE" || !deleteTarget) return;
+
     if (deleteTarget.type === "all") {
       setMyAppNames([]);
       setCustomUrls({});
       setPayments({});
+      setNotes({});
+      setStatuses({});
       localStorage.setItem("my-app-list", JSON.stringify([]));
       localStorage.removeItem("custom-urls");
       localStorage.removeItem("app-payments");
-    } else if (deleteTarget.tag) {
+      localStorage.removeItem("app-notes");
+      localStorage.removeItem("app-statuses");
+
+    } else if (deleteTarget.type === "category" && deleteTarget.tag) {
       const toRemove = new Set(
         myApps.filter((a) => a.tags.includes(deleteTarget.tag!)).map((a) => a.name)
       );
       const updated = myAppNames.filter((n) => !toRemove.has(n));
       setMyAppNames(updated);
       localStorage.setItem("my-app-list", JSON.stringify(updated));
+
+    } else if (deleteTarget.type === "selected") {
+      const toDelete = selectedApps;
+      const updated = myAppNames.filter((n) => !toDelete.has(n));
+      const updatedUrls = { ...customUrls };
+      const updatedPayments = { ...payments };
+      const updatedNotes = { ...notes };
+      const updatedStatuses = { ...statuses };
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; });
+      setMyAppNames(updated);
+      setCustomUrls(updatedUrls);
+      setPayments(updatedPayments);
+      setNotes(updatedNotes);
+      setStatuses(updatedStatuses);
+      localStorage.setItem("my-app-list", JSON.stringify(updated));
+      localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
+      localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
+      localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
+      localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
+      setSelectedApps(new Set());
+      setSelectMode(false);
     }
+
     setDeleteTarget(null);
     setDeleteInput("");
     setEditing(null);
@@ -342,6 +451,7 @@ export default function Home() {
 
   function openAddModal(tag: string | null) {
     setAddModalTag(tag);
+    setAddModalSearch("");
     setShowAddModal(true);
   }
 
@@ -354,14 +464,30 @@ export default function Home() {
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
   }
 
-  function removeApp(name: string) {
-    if (editing === name) setEditing(null);
+  function deleteApp(name: string) {
     const updated = myAppNames.filter((n) => n !== name);
+    const updatedUrls = { ...customUrls };
+    const updatedPayments = { ...payments };
+    const updatedNotes = { ...notes };
+    const updatedStatuses = { ...statuses };
+    delete updatedUrls[name];
+    delete updatedPayments[name];
+    delete updatedNotes[name];
+    delete updatedStatuses[name];
     setMyAppNames(updated);
+    setCustomUrls(updatedUrls);
+    setPayments(updatedPayments);
+    setNotes(updatedNotes);
+    setStatuses(updatedStatuses);
     localStorage.setItem("my-app-list", JSON.stringify(updated));
+    localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
+    localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
+    localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
+    localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
+    setEditing(null);
   }
 
-  function startEdit(name: string) {
+  function openAppDetail(name: string) {
     const pay = payments[name];
     setEditing(name);
     setUrlDraft(customUrls[name] ?? catalog.find((a) => a.name === name)?.url ?? "");
@@ -370,6 +496,8 @@ export default function Home() {
     setPayPeriodDraft(pay?.period ?? "monthly");
     setPayDayDraft(pay?.day ? String(pay.day) : "");
     setPayMonthDraft(pay?.month ? String(pay.month) : "");
+    setNotesDraft(notes[name] ?? "");
+    setStatusDraft(statuses[name] ?? "active");
   }
 
   function saveEdit() {
@@ -392,6 +520,22 @@ export default function Home() {
     };
     setPayments(updatedPayments);
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
+    const updatedNotes = { ...notes };
+    if (notesDraft.trim()) {
+      updatedNotes[editing] = notesDraft.trim();
+    } else {
+      delete updatedNotes[editing];
+    }
+    setNotes(updatedNotes);
+    localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
+    const updatedStatuses = { ...statuses };
+    if (statusDraft === "active") {
+      delete updatedStatuses[editing];
+    } else {
+      updatedStatuses[editing] = statusDraft;
+    }
+    setStatuses(updatedStatuses);
+    localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
     setEditing(null);
   }
 
@@ -406,9 +550,18 @@ export default function Home() {
     .filter((app) => app.name.toLowerCase().includes(search.toLowerCase()));
 
   const availableToAdd = catalog.filter((a) => !myAppNames.includes(a.name));
-  const addModalApps = addModalTag
+  const addModalBaseApps = (addModalTag
     ? availableToAdd.filter((a) => a.tags.includes(addModalTag))
-    : availableToAdd;
+    : availableToAdd
+  ).sort((a, b) => a.name.localeCompare(b.name));
+  const addModalApps = addModalSearch.trim()
+    ? addModalBaseApps.filter((a) => {
+        const q = addModalSearch.toLowerCase();
+        return a.name.toLowerCase().includes(q)
+          || a.brand.toLowerCase().includes(q)
+          || a.tags.some((t) => t.toLowerCase().includes(q));
+      })
+    : addModalBaseApps;
 
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
@@ -435,7 +588,7 @@ export default function Home() {
   const selectCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors appearance-none ${d ? "bg-white/5 border-white/10 text-white focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 focus:border-black/20"}`;
 
   return (
-    <main className={`min-h-screen px-4 sm:px-10 py-8 sm:py-12 transition-colors duration-200 ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
+    <main className={`min-h-screen px-4 sm:px-10 py-8 sm:py-12 transition-colors duration-200 ${selectMode ? "pb-28" : ""} ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
 
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
@@ -447,6 +600,10 @@ export default function Home() {
           <button onClick={() => openDeleteModal("all")} title="Delete all apps"
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-500 hover:bg-red-500/20 hover:text-red-400" : "bg-black/[0.06] text-gray-400 hover:bg-red-50 hover:text-red-500"}`}>
             <TrashIcon />
+          </button>
+          <button onClick={() => { exitSelectMode(); setSelectMode(true); }} title="Select apps"
+            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${selectMode ? "bg-amber-500 text-white" : d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            <CheckSquareIcon />
           </button>
           <button onClick={shareApps} title="Share hub"
             className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-medium transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
@@ -487,7 +644,7 @@ export default function Home() {
             </span>
           )}
           {statsAnnual > 0 && (
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"}`}>
+            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
               {fmtCurrency(statsAnnual)}/yr
             </span>
           )}
@@ -521,9 +678,13 @@ export default function Home() {
           <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
-          <input type="text" placeholder="Search apps..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className={`pl-9 pr-4 py-2 rounded-xl text-sm outline-none border transition-colors w-full sm:w-48 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+          <input ref={searchRef} type="text" placeholder="Search apps…" value={search} onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && (setSearch(""), (e.target as HTMLInputElement).blur())}
+            className={`pl-9 pr-16 py-2 rounded-xl text-sm outline-none border transition-colors w-full sm:w-52 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
           />
+          <kbd className={`absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
+            <span>⌘</span><span>K</span>
+          </kbd>
         </div>
 
         {availableTags.length > 0 && <div className={`hidden sm:block h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />}
@@ -555,8 +716,10 @@ export default function Home() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-              payment={payments[app.name]} currency={currency} d={d}
-              onEdit={() => startEdit(app.name)} onRemove={() => removeApp(app.name)}
+              payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]} d={d}
+              selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+              onOpen={() => openAppDetail(app.name)}
+              onToggleSelect={() => toggleSelect(app.name)}
             />
           ))}
           {filteredApps.length === 0 && (
@@ -584,18 +747,43 @@ export default function Home() {
                   {myApps.filter((a) => a.tags.includes(tag)).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                       payment={payments[app.name]} currency={currency} d={d}
-                      onEdit={() => startEdit(app.name)} onRemove={() => removeApp(app.name)}
+                      selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+                      onOpen={() => openAppDetail(app.name)}
+                      onToggleSelect={() => toggleSelect(app.name)}
                     />
                   ))}
-                  <button onClick={() => openAddModal(tag)}
-                    className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
-                    <span className="text-xs font-medium">Add</span>
-                  </button>
+                  {!selectMode && (
+                    <button onClick={() => openAddModal(tag)}
+                      className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
+                      <span className="text-xs font-medium">Add</span>
+                    </button>
+                  )}
                 </div>
               </section>
             ))
           )}
+        </div>
+      )}
+
+      {/* Select mode bottom bar */}
+      {selectMode && (
+        <div className={`fixed bottom-0 left-0 right-0 px-6 py-4 flex items-center justify-between gap-4 z-40 border-t ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+          <span className={`text-sm font-medium ${d ? "text-gray-300" : "text-gray-700"}`}>
+            {selectedApps.size} app{selectedApps.size !== 1 ? "s" : ""} selected
+          </span>
+          <div className="flex gap-2">
+            <button onClick={exitSelectMode}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${d ? "bg-white/8 text-gray-300 hover:bg-white/12" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+              Cancel
+            </button>
+            <button
+              onClick={() => selectedApps.size > 0 && openDeleteModal("selected")}
+              disabled={selectedApps.size === 0}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${selectedApps.size > 0 ? "bg-red-500 text-white hover:bg-red-600" : d ? "bg-white/5 text-gray-600 cursor-not-allowed" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}>
+              Delete{selectedApps.size > 0 ? ` (${selectedApps.size})` : ""}
+            </button>
+          </div>
         </div>
       )}
 
@@ -606,19 +794,23 @@ export default function Home() {
         </div>
       )}
 
-      {/* Edit modal */}
+      {/* App detail modal */}
       {editingApp && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setEditing(null)}>
-          <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+          <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border max-h-[90vh] overflow-y-auto ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
 
-            {/* App identity */}
+            {/* App identity + Visit */}
             <div className="flex items-center gap-3 mb-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={editingApp.icon} alt={editingApp.name} className="w-11 h-11 rounded-xl flex-shrink-0" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="font-semibold text-base">{editingApp.name}</div>
                 <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>{editingApp.brand}</div>
               </div>
+              <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
+                className={`flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
+                Visit <ExternalLinkIcon />
+              </a>
             </div>
 
             {/* URL */}
@@ -628,6 +820,27 @@ export default function Home() {
               value={urlDraft} placeholder="https://..." onChange={(e) => setUrlDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus
             />
+
+            {/* Status */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Status</p>
+            <div className="flex gap-2">
+              {([
+                { value: "active", label: "Active" },
+                { value: "trial", label: "Trial" },
+                { value: "cancelled", label: "Cancelled" },
+              ] as { value: AppStatus; label: string }[]).map(({ value, label }) => (
+                <button key={value} onClick={() => setStatusDraft(value)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+                    statusDraft === value
+                      ? value === "active" ? "bg-green-500 text-white"
+                        : value === "trial" ? "bg-violet-500 text-white"
+                        : "bg-gray-500 text-white"
+                      : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
             {/* Payment */}
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Payment</p>
@@ -685,7 +898,7 @@ export default function Home() {
                             const month = e.target.value;
                             setPayMonthDraft(month);
                             if (month && payDayDraft) {
-                              const maxDay = [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(month) - 1];
+                              const maxDay = DAYS_IN_MONTH[parseInt(month) - 1];
                               const n = parseInt(payDayDraft);
                               if (!isNaN(n) && n > maxDay) setPayDayDraft(String(maxDay));
                             }
@@ -702,12 +915,12 @@ export default function Home() {
                       )}
                       <input
                         type="number" min="1"
-                        max={payPeriodDraft === "monthly" ? 31 : payMonthDraft ? [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(payMonthDraft)-1] : 31}
+                        max={payPeriodDraft === "monthly" ? 31 : payMonthDraft ? DAYS_IN_MONTH[parseInt(payMonthDraft) - 1] : 31}
                         placeholder="Day"
                         value={payDayDraft}
                         onChange={(e) => {
                           if (e.target.value === "") { setPayDayDraft(""); return; }
-                          const maxDay = payPeriodDraft === "monthly" ? 31 : payMonthDraft ? [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(payMonthDraft)-1] : 31;
+                          const maxDay = payPeriodDraft === "monthly" ? 31 : payMonthDraft ? DAYS_IN_MONTH[parseInt(payMonthDraft) - 1] : 31;
                           const n = parseInt(e.target.value);
                           setPayDayDraft(String(Math.max(1, Math.min(maxDay, isNaN(n) ? 1 : n))));
                         }}
@@ -719,8 +932,18 @@ export default function Home() {
               </div>
             )}
 
+            {/* Notes */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Notes</p>
+            <textarea
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              placeholder="Add any notes about this app…"
+              rows={3}
+              className={`w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors resize-none ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+            />
+
             {/* Actions */}
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-2 mt-4">
               <button onClick={saveEdit}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-amber-500 text-white hover:bg-amber-600">
                 Save
@@ -730,6 +953,12 @@ export default function Home() {
                 Cancel
               </button>
             </div>
+
+            {/* Remove */}
+            <button onClick={() => deleteApp(editing!)}
+              className={`mt-3 w-full py-2 rounded-xl text-xs font-medium transition-colors ${d ? "text-gray-600 hover:bg-red-500/10 hover:text-red-400" : "text-gray-400 hover:bg-red-50 hover:text-red-500"}`}>
+              Remove from hub
+            </button>
           </div>
         </div>
       )}
@@ -742,11 +971,15 @@ export default function Home() {
               <TrashIcon />
             </div>
             <h2 className="font-bold text-lg mb-1">
-              {deleteTarget.type === "all" ? "Delete all apps" : `Delete all ${deleteTarget.tag} apps`}
+              {deleteTarget.type === "all" ? "Delete all apps"
+                : deleteTarget.type === "selected" ? `Delete ${selectedApps.size} app${selectedApps.size !== 1 ? "s" : ""}`
+                : `Delete all ${deleteTarget.tag} apps`}
             </h2>
             <p className={`text-sm mb-5 ${d ? "text-gray-400" : "text-gray-500"}`}>
               {deleteTarget.type === "all"
                 ? "This will remove every app from your hub. This cannot be undone."
+                : deleteTarget.type === "selected"
+                ? `This will remove ${selectedApps.size} selected app${selectedApps.size !== 1 ? "s" : ""} from your hub. This cannot be undone.`
                 : `This will remove all apps in the ${deleteTarget.tag} category. This cannot be undone.`}
             </p>
             <p className={`text-xs font-medium mb-2 ${d ? "text-gray-400" : "text-gray-600"}`}>
@@ -799,22 +1032,39 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowAddModal(false)}>
           <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
             <h2 className="font-bold text-lg mb-1">{addModalTag ? `Add to ${addModalTag}` : "Add an App"}</h2>
-            <p className={`text-xs mb-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
+            <p className={`text-xs mb-3 ${d ? "text-gray-500" : "text-gray-400"}`}>
               {(() => {
                 if (addModalTag) {
                   const catTotal = catalog.filter(a => a.tags.includes(addModalTag)).length;
                   const catAdded = myApps.filter(a => a.tags.includes(addModalTag)).length;
-                  return addModalApps.length > 0
-                    ? `${addModalApps.length} of ${catTotal} available · ${catAdded} already added`
+                  return addModalBaseApps.length > 0
+                    ? `${addModalBaseApps.length} of ${catTotal} available · ${catAdded} already added`
                     : `All ${catTotal} ${addModalTag} apps already added`;
                 }
-                return addModalApps.length > 0
-                  ? `${addModalApps.length} of ${catalog.length} apps not yet added`
+                return addModalBaseApps.length > 0
+                  ? `${addModalBaseApps.length} of ${catalog.length} apps not yet added`
                   : "All apps have been added";
               })()}
             </p>
+
+            {addModalBaseApps.length > 0 && (
+              <div className="relative mb-3">
+                <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  type="text" placeholder="Search apps, brands, categories…"
+                  value={addModalSearch} onChange={(e) => setAddModalSearch(e.target.value)}
+                  autoFocus
+                  className={`pl-8 pr-3 py-2 w-full rounded-xl text-sm outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+                />
+              </div>
+            )}
+
             {addModalApps.length === 0 ? (
-              <p className={`text-sm text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>Nothing left to add here.</p>
+              <p className={`text-sm text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                {addModalSearch ? `No results for "${addModalSearch}"` : "Nothing left to add here."}
+              </p>
             ) : (
               <div className="flex flex-col gap-1 max-h-96 overflow-y-auto">
                 {addModalApps.map((app) => (
@@ -851,51 +1101,80 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, d, onEdit, onRemove }: {
-  app: App; url: string; payment?: Payment; currency: string; d: boolean;
-  onEdit: () => void; onRemove: () => void;
+function AppCard({ app, url, payment, currency, notes, status, d, selectMode, isSelected, onOpen, onToggleSelect }: {
+  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; d: boolean;
+  selectMode: boolean; isSelected: boolean;
+  onOpen: () => void; onToggleSelect: () => void;
 }) {
+  const daysUntilDue = payment ? getDaysUntilDue(payment) : null;
+  const dueSoon = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7 && status !== "cancelled";
+  const isCancelled = status === "cancelled";
+  const isTrial = status === "trial";
+
+  const dueSoonLabel = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7
+    ? daysUntilDue === 0 ? "Due today!" : `Due in ${daysUntilDue}d`
+    : null;
+
   const tooltipMeta = [
     app.brand,
     payment ? paymentLabel(payment, currency) : null,
     payment ? paymentDueLabel(payment) : null,
+    dueSoonLabel,
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <div className="group relative">
+    <div className="group relative cursor-pointer" onClick={selectMode ? onToggleSelect : onOpen}>
 
-      {/* Tooltip */}
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-44 text-xs rounded-xl px-3 py-2.5 leading-snug text-center pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
-        <div>{app.description}</div>
-        {tooltipMeta && (
-          <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>
+      {/* Tooltip — only in normal mode */}
+      {!selectMode && (
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-44 text-xs rounded-xl px-3 py-2.5 leading-snug text-center pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
+          <div>{app.description}</div>
+          {tooltipMeta && (
+            <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>
+          )}
+          {notes && (
+            <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>
+          )}
+          <div className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
+        </div>
+      )}
+
+      <div className={`relative flex flex-col items-center justify-center gap-2 h-36 rounded-2xl p-4 border transition-all duration-200 group-hover:scale-105 ${isCancelled ? "opacity-50" : ""} ${
+        isSelected && selectMode
+          ? d ? "bg-amber-500/10 border-amber-500/60" : "bg-amber-50 border-amber-400"
+          : d ? "bg-white/5 border-white/10 group-hover:bg-white/10" : "bg-white border-black/[0.08] group-hover:bg-[#eeece8]"
+      }`}>
+        {/* Billing alert dot */}
+        {dueSoon && !selectMode && (
+          <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
         )}
-        <div className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
-      </div>
-
-      <a href={url} target="_blank" rel="noopener noreferrer"
-        className={`flex flex-col items-center justify-center gap-2 h-36 rounded-2xl p-4 border hover:scale-105 transition-all duration-200 ${d ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white border-black/[0.08] hover:bg-[#eeece8]"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
         <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
-        {payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
+        {isTrial && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
+        )}
+        {isCancelled && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
+        )}
+        {!isTrial && !isCancelled && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
         {payment && paymentDueLabel(payment) && (
-          <span className={`text-[10px] leading-none ${d ? "text-gray-500" : "text-gray-400"}`}>
+          <span className={`text-[10px] leading-none ${dueSoon ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
             {paymentDueLabel(payment)}
           </span>
         )}
-      </a>
+      </div>
 
-      <button onClick={onEdit} title="Edit"
-        className={`absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full w-6 h-6 flex items-center justify-center ${d ? "bg-white/10 text-gray-500 hover:text-gray-300" : "bg-black/[0.06] text-gray-400 hover:text-gray-600"}`}>
-        <PencilIcon />
-      </button>
-      <button onClick={onRemove} title="Remove"
-        className={`absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full w-6 h-6 flex items-center justify-center ${d ? "bg-white/10 text-gray-500 hover:text-red-400" : "bg-black/[0.06] text-gray-400 hover:text-red-400"}`}>
-        <XIcon />
-      </button>
+      {/* Select mode indicator */}
+      {selectMode && (
+        <div className={`absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+          isSelected ? "bg-amber-500 text-white" : d ? "bg-white/15 text-transparent" : "bg-black/10 text-transparent"
+        }`}>
+          {isSelected && <CheckIcon />}
+        </div>
+      )}
     </div>
   );
 }
