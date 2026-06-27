@@ -1,5 +1,35 @@
 # Design Notes
 
+## Branding & naming
+
+**Current name:** Helio
+
+**Origin:** From ancient Greek Ἥλιος (*Hēlios*), meaning "sun." Used as a prefix in modern scientific vocabulary (heliocentric, helium). Short, clean, internationally recognizable, startup-friendly.
+
+**Why "Helio" not "Helios":** Helios is the full mythological name (more epic/formal). Helio is the prefix form — shorter, lighter, easier to brand. Feels modern rather than mythological.
+
+**Naming conflicts:** Other companies use "Helio" (helio.im — AI workspace, helio-ai.com — recruiting). They are in different product categories so it is not a legal problem for personal use. For the SaaS phase, the plan is to append a keyword to differentiate (e.g. "Helio Hub", "HelioApp", etc.) and check trademark databases before launching publicly.
+
+**Domain strategy:** `.com` likely taken/expensive. Preferred options when going public:
+- `helio.app` — most fitting (it's literally an app hub)
+- `usehelio.com` — classic startup pattern
+- `getHelio.app` — also clean
+
+**Current domain:** Vercel-assigned (`my-apps-henna.vercel.app`) — fine for v1 personal use.
+
+**Brand color:** Amber (`amber-500` / `#F59E0B`). Chosen because amber is warm, sun-adjacent, and ties directly to the Helio metaphor. Applied to: primary action buttons (Add App, Save, Copy), stats cost chips, catalog brand badges, and category "+" button hover. Neutral dark/white reserved for navigation elements (filter pills, cancel buttons) so the brand color stays meaningful.
+
+---
+
+## Responsive / mobile
+The app must work well on mobile screens. Key rules:
+- Padding shrinks on small screens (`px-4 sm:px-10`, `py-8 sm:py-12`)
+- Search bar goes full-width on mobile
+- All modals use `w-full max-w-xs/sm mx-4` so they don't overflow small screens
+- Category filter pills wrap naturally (`flex-wrap`)
+- Card grid is always responsive: `grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8`
+- Header buttons wrap on very small viewports (`flex-wrap`)
+
 ## Visual style
 - **Modern minimalist** — clean, uncluttered, lots of breathing room
 - **Light mode** (default): warm off-white background (`#f7f6f3`), white cards, dark charcoal text

@@ -5,8 +5,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "My Apps",
-  description: "Personal app hub",
+  title: "Helio",
+  description: "Your personal app hub",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -44,7 +44,7 @@ function ShareView() {
   return (
     <main className="min-h-screen bg-[#f7f6f3] px-10 py-12">
       <div className="flex items-center justify-between mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">My Apps</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Helio</h1>
         <span className="text-xs text-gray-400 bg-white border border-black/[0.08] px-3 py-1.5 rounded-full">
           Read-only view
         </span>

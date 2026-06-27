@@ -7,7 +7,6 @@ type PaymentPeriod = "monthly" | "annually" | "once";
 type Payment = {
   type: "free" | "paid";
   amount?: string;
-  currency?: string;
   period?: PaymentPeriod;
   day?: number;
   month?: number;
@@ -139,15 +138,15 @@ function formatPaidLabel(amount: string, currency: string, period?: PaymentPerio
       .formatToParts(parseFloat(amount))
       .find((p) => p.type === "currency")?.value ?? "";
     const suffix = period === "monthly" ? "/mo" : period === "annually" ? "/yr" : "";
-    return `${sym}${amount} ${currency || "USD"}${suffix}`;
+    return `${sym}${amount}${suffix}`;
   } catch {
     return `${amount} ${currency}`;
   }
 }
 
-function paymentLabel(payment: Payment): string {
+function paymentLabel(payment: Payment, currency: string): string {
   if (payment.type === "free") return "Free";
-  return formatPaidLabel(payment.amount ?? "", payment.currency ?? "USD", payment.period);
+  return formatPaidLabel(payment.amount ?? "", currency, payment.period);
 }
 
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -170,14 +169,14 @@ function paymentDueLabel(payment: Payment): string | null {
 
 // ─── Payment badge ────────────────────────────────────────────────────────────
 
-function PaymentBadge({ payment, d }: { payment: Payment; d: boolean }) {
+function PaymentBadge({ payment, currency, d }: { payment: Payment; currency: string; d: boolean }) {
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
       payment.type === "free"
         ? d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-600"
         : d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"
     }`}>
-      {paymentLabel(payment)}
+      {paymentLabel(payment, currency)}
     </span>
   );
 }
@@ -188,11 +187,11 @@ export default function Home() {
   const [myAppNames, setMyAppNames] = useState<string[]>([]);
   const [customUrls, setCustomUrls] = useState<Record<string, string>>({});
   const [payments, setPayments] = useState<Payments>({});
+  const [currency, setCurrency] = useState("USD");
   const [editing, setEditing] = useState<string | null>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [payTypeDraft, setPayTypeDraft] = useState<"free" | "paid">("free");
   const [payAmountDraft, setPayAmountDraft] = useState("");
-  const [payCurrencyDraft, setPayCurrencyDraft] = useState("USD");
   const [payPeriodDraft, setPayPeriodDraft] = useState<PaymentPeriod>("monthly");
   const [payDayDraft, setPayDayDraft] = useState("");
   const [payMonthDraft, setPayMonthDraft] = useState("");
@@ -216,6 +215,8 @@ export default function Home() {
     if (savedUrls) setCustomUrls(JSON.parse(savedUrls));
     const savedPayments = localStorage.getItem("app-payments");
     if (savedPayments) setPayments(JSON.parse(savedPayments));
+    const savedCurrency = localStorage.getItem("app-currency");
+    if (savedCurrency) setCurrency(savedCurrency);
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
   }, []);
 
@@ -233,6 +234,11 @@ export default function Home() {
     const next = !isDark;
     setIsDark(next);
     localStorage.setItem("theme", next ? "dark" : "light");
+  }
+
+  function changeCurrency(code: string) {
+    setCurrency(code);
+    localStorage.setItem("app-currency", code);
   }
 
   function shareApps() {
@@ -262,8 +268,9 @@ export default function Home() {
         tags: app.tags,
         description: app.description,
         payment: payments[app.name] ?? null,
+        currency,
       }));
-    const blob = new Blob([JSON.stringify(myApps, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ currency, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -277,8 +284,10 @@ export default function Home() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        if (!Array.isArray(data)) throw new Error("not an array");
+        const raw = JSON.parse(e.target?.result as string);
+        // support both old array format and new {currency, apps} format
+        const data = Array.isArray(raw) ? raw : raw.apps;
+        if (!Array.isArray(data)) throw new Error("invalid");
         const validNames: string[] = [];
         const newUrls: Record<string, string> = {};
         const newPayments: Payments = {};
@@ -289,6 +298,7 @@ export default function Home() {
           if (item.url && item.url !== catalogApp.url) newUrls[item.name] = item.url;
           if (item.payment) newPayments[item.name] = item.payment;
         }
+        if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
         setMyAppNames(validNames);
         setCustomUrls(newUrls);
         setPayments(newPayments);
@@ -357,7 +367,6 @@ export default function Home() {
     setUrlDraft(customUrls[name] ?? catalog.find((a) => a.name === name)?.url ?? "");
     setPayTypeDraft(pay?.type ?? "free");
     setPayAmountDraft(pay?.amount ?? "");
-    setPayCurrencyDraft(pay?.currency ?? "USD");
     setPayPeriodDraft(pay?.period ?? "monthly");
     setPayDayDraft(pay?.day ? String(pay.day) : "");
     setPayMonthDraft(pay?.month ? String(pay.month) : "");
@@ -376,7 +385,6 @@ export default function Home() {
           : {
               type: "paid",
               amount: payAmountDraft,
-              currency: payCurrencyDraft,
               period: payPeriodDraft,
               ...(payDayDraft ? { day: parseInt(payDayDraft) } : {}),
               ...(payMonthDraft && payPeriodDraft === "annually" ? { month: parseInt(payMonthDraft) } : {}),
@@ -405,24 +413,20 @@ export default function Home() {
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
   // Stats
-  const statsRecurring: Record<string, number> = {};
-  const statsOneTime: Record<string, number> = {};
+  let statsMonthly = 0;
+  let statsAnnual = 0;
+  let statsOnce = 0;
   for (const name of myAppNames) {
     const pay = payments[name];
     if (!pay || pay.type !== "paid" || !pay.amount) continue;
     const amt = parseFloat(pay.amount);
     if (isNaN(amt)) continue;
-    const cur = pay.currency || "USD";
-    if (pay.period === "monthly") {
-      statsRecurring[cur] = (statsRecurring[cur] || 0) + amt;
-    } else if (pay.period === "annually") {
-      statsRecurring[cur] = (statsRecurring[cur] || 0) + amt / 12;
-    } else if (pay.period === "once") {
-      statsOneTime[cur] = (statsOneTime[cur] || 0) + amt;
-    }
+    if (pay.period === "monthly") statsMonthly += amt;
+    else if (pay.period === "annually") statsAnnual += amt;
+    else if (pay.period === "once") statsOnce += amt;
   }
 
-  function fmtCurrency(amount: number, currency: string) {
+  function fmtCurrency(amount: number) {
     return new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
   }
 
@@ -431,12 +435,15 @@ export default function Home() {
   const selectCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors appearance-none ${d ? "bg-white/5 border-white/10 text-white focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 focus:border-black/20"}`;
 
   return (
-    <main className={`min-h-screen px-10 py-12 transition-colors duration-200 ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
+    <main className={`min-h-screen px-4 sm:px-10 py-8 sm:py-12 transition-colors duration-200 ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">My Apps</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
+          <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Everything orbits here.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => openDeleteModal("all")} title="Delete all apps"
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-500 hover:bg-red-500/20 hover:text-red-400" : "bg-black/[0.06] text-gray-400 hover:bg-red-50 hover:text-red-500"}`}>
             <TrashIcon />
@@ -474,31 +481,52 @@ export default function Home() {
           <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
             {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
           </span>
-          {Object.entries(statsRecurring).map(([cur, amt]) => (
-            <span key={cur} className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}>
-              ≈ {fmtCurrency(amt, cur)}/mo
+          {statsMonthly > 0 && (
+            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
+              {fmtCurrency(statsMonthly)}/mo
             </span>
-          ))}
-          {Object.entries(statsOneTime).map(([cur, amt]) => (
-            <span key={cur} className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
-              {fmtCurrency(amt, cur)} one-time
+          )}
+          {statsAnnual > 0 && (
+            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"}`}>
+              {fmtCurrency(statsAnnual)}/yr
             </span>
-          ))}
+          )}
+          {statsOnce > 0 && (
+            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+              {fmtCurrency(statsOnce)} one-time
+            </span>
+          )}
+          <div className="ml-auto relative">
+            <select
+              value={currency}
+              onChange={(e) => changeCurrency(e.target.value)}
+              className={`text-xs pl-3 pr-6 py-1.5 rounded-full font-medium appearance-none outline-none cursor-pointer transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </select>
+            <div className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
           <input type="text" placeholder="Search apps..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className={`pl-9 pr-4 py-2 rounded-xl text-sm outline-none border transition-colors w-48 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+            className={`pl-9 pr-4 py-2 rounded-xl text-sm outline-none border transition-colors w-full sm:w-48 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
           />
         </div>
 
-        {availableTags.length > 0 && <div className={`h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />}
+        {availableTags.length > 0 && <div className={`hidden sm:block h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />}
 
         {availableTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -516,7 +544,7 @@ export default function Home() {
         )}
 
         <button onClick={() => openAddModal(null)}
-          className={`ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${d ? "bg-white text-black hover:bg-gray-100" : "bg-gray-900 text-white hover:bg-gray-700"}`}>
+          className="sm:ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors bg-amber-500 text-white hover:bg-amber-600">
           <span className="text-base leading-none">+</span>
           <span>Add App</span>
         </button>
@@ -524,10 +552,10 @@ export default function Home() {
 
       {/* App grid */}
       {activeTag || search ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-              payment={payments[app.name]} d={d}
+              payment={payments[app.name]} currency={currency} d={d}
               onEdit={() => startEdit(app.name)} onRemove={() => removeApp(app.name)}
             />
           ))}
@@ -552,15 +580,15 @@ export default function Home() {
                     <span>Delete all</span>
                   </button>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
                   {myApps.filter((a) => a.tags.includes(tag)).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-                      payment={payments[app.name]} d={d}
+                      payment={payments[app.name]} currency={currency} d={d}
                       onEdit={() => startEdit(app.name)} onRemove={() => removeApp(app.name)}
                     />
                   ))}
                   <button onClick={() => openAddModal(tag)}
-                    className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-white/40 hover:text-white/50" : "border-black/20 text-black/25 hover:border-black/35 hover:text-black/40"}`}>
+                    className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
                     <span className="text-xs font-medium">Add</span>
                   </button>
@@ -573,15 +601,15 @@ export default function Home() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg ${d ? "bg-white text-black" : "bg-gray-900 text-white"}`}>
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg z-50 ${d ? "bg-white text-black" : "bg-gray-900 text-white"}`}>
           {toast}
         </div>
       )}
 
       {/* Edit modal */}
       {editingApp && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setEditing(null)}>
-          <div className={`rounded-2xl p-6 w-80 shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setEditing(null)}>
+          <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
 
             {/* App identity */}
             <div className="flex items-center gap-3 mb-6">
@@ -618,26 +646,15 @@ export default function Home() {
 
             {payTypeDraft === "paid" && (
               <div className="flex flex-col gap-2">
-                <input
-                  type="number" min="0" step="0.01" placeholder="9.99" value={payAmountDraft}
-                  onChange={(e) => setPayAmountDraft(e.target.value)}
-                  className={inputCls}
-                />
                 <div className="relative">
-                  <select
-                    value={payCurrencyDraft}
-                    onChange={(e) => setPayCurrencyDraft(e.target.value)}
-                    className={selectCls}
-                  >
-                    {CURRENCIES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
-                    ))}
-                  </select>
-                  <div className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m6 9 6 6 6-6"/>
-                    </svg>
-                  </div>
+                  <input
+                    type="number" min="0" step="0.01" placeholder="9.99" value={payAmountDraft}
+                    onChange={(e) => setPayAmountDraft(e.target.value)}
+                    className={inputCls}
+                  />
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none ${d ? "text-gray-500" : "text-gray-400"}`}>
+                    {currency}
+                  </span>
                 </div>
                 <div className="flex gap-2 pt-1">
                   {([
@@ -664,7 +681,15 @@ export default function Home() {
                     <div className="flex gap-2">
                       {payPeriodDraft === "annually" && (
                         <div className="relative flex-1">
-                          <select value={payMonthDraft} onChange={(e) => setPayMonthDraft(e.target.value)} className={selectCls}>
+                          <select value={payMonthDraft} onChange={(e) => {
+                            const month = e.target.value;
+                            setPayMonthDraft(month);
+                            if (month && payDayDraft) {
+                              const maxDay = [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(month) - 1];
+                              const n = parseInt(payDayDraft);
+                              if (!isNaN(n) && n > maxDay) setPayDayDraft(String(maxDay));
+                            }
+                          }} className={selectCls}>
                             <option value="">Month</option>
                             {MONTH_SHORT.map((m, i) => (
                               <option key={i} value={String(i + 1)}>{m}</option>
@@ -676,8 +701,16 @@ export default function Home() {
                         </div>
                       )}
                       <input
-                        type="number" min="1" max="31" placeholder="Day"
-                        value={payDayDraft} onChange={(e) => setPayDayDraft(e.target.value)}
+                        type="number" min="1"
+                        max={payPeriodDraft === "monthly" ? 31 : payMonthDraft ? [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(payMonthDraft)-1] : 31}
+                        placeholder="Day"
+                        value={payDayDraft}
+                        onChange={(e) => {
+                          if (e.target.value === "") { setPayDayDraft(""); return; }
+                          const maxDay = payPeriodDraft === "monthly" ? 31 : payMonthDraft ? [31,28,31,30,31,30,31,31,30,31,30,31][parseInt(payMonthDraft)-1] : 31;
+                          const n = parseInt(e.target.value);
+                          setPayDayDraft(String(Math.max(1, Math.min(maxDay, isNaN(n) ? 1 : n))));
+                        }}
                         className={`${payPeriodDraft === "annually" ? "flex-1" : "w-full"} text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
                       />
                     </div>
@@ -689,7 +722,7 @@ export default function Home() {
             {/* Actions */}
             <div className="flex gap-2 mt-6">
               <button onClick={saveEdit}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${d ? "bg-white text-black hover:bg-gray-100" : "bg-gray-900 text-white hover:bg-gray-700"}`}>
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors bg-amber-500 text-white hover:bg-amber-600">
                 Save
               </button>
               <button onClick={() => setEditing(null)}
@@ -703,8 +736,8 @@ export default function Home() {
 
       {/* Delete confirmation modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setDeleteTarget(null)}>
-          <div className={`rounded-2xl p-6 w-88 shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setDeleteTarget(null)}>
+          <div className={`rounded-2xl p-6 w-full max-w-sm shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${d ? "bg-red-500/15 text-red-400" : "bg-red-50 text-red-500"}`}>
               <TrashIcon />
             </div>
@@ -740,8 +773,8 @@ export default function Home() {
 
       {/* Share modal */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowShareModal(false)}>
-          <div className={`rounded-2xl p-6 w-96 shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowShareModal(false)}>
+          <div className={`rounded-2xl p-6 w-full max-w-sm shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
             <h2 className="font-bold text-lg mb-1">Share your hub</h2>
             <p className={`text-xs mb-5 ${d ? "text-gray-500" : "text-gray-400"}`}>
               Anyone with this link can view your apps in read-only mode.
@@ -749,7 +782,7 @@ export default function Home() {
             <div className={`flex items-center gap-2 rounded-xl border p-1 pl-3 ${d ? "bg-white/5 border-white/10" : "bg-gray-50 border-black/[0.08]"}`}>
               <span className={`text-xs flex-1 truncate font-mono ${d ? "text-gray-400" : "text-gray-500"}`}>{shareUrl}</span>
               <button onClick={copyShareUrl}
-                className={`flex-shrink-0 text-xs px-4 py-2 rounded-lg font-semibold transition-colors ${copied ? "bg-green-500 text-white" : d ? "bg-white text-black hover:bg-gray-100" : "bg-gray-900 text-white hover:bg-gray-700"}`}>
+                className={`flex-shrink-0 text-xs px-4 py-2 rounded-lg font-semibold transition-colors ${copied ? "bg-green-500 text-white" : "bg-amber-500 text-white hover:bg-amber-600"}`}>
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
@@ -763,14 +796,25 @@ export default function Home() {
 
       {/* Add app modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowAddModal(false)}>
-          <div className={`rounded-2xl p-6 w-80 shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowAddModal(false)}>
+          <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
             <h2 className="font-bold text-lg mb-1">{addModalTag ? `Add to ${addModalTag}` : "Add an App"}</h2>
             <p className={`text-xs mb-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
-              {addModalTag ? `Showing ${addModalTag} apps.` : "Select an app to add to your hub."}
+              {(() => {
+                if (addModalTag) {
+                  const catTotal = catalog.filter(a => a.tags.includes(addModalTag)).length;
+                  const catAdded = myApps.filter(a => a.tags.includes(addModalTag)).length;
+                  return addModalApps.length > 0
+                    ? `${addModalApps.length} of ${catTotal} available · ${catAdded} already added`
+                    : `All ${catTotal} ${addModalTag} apps already added`;
+                }
+                return addModalApps.length > 0
+                  ? `${addModalApps.length} of ${catalog.length} apps not yet added`
+                  : "All apps have been added";
+              })()}
             </p>
             {addModalApps.length === 0 ? (
-              <p className={`text-sm text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>All apps have been added.</p>
+              <p className={`text-sm text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>Nothing left to add here.</p>
             ) : (
               <div className="flex flex-col gap-1 max-h-96 overflow-y-auto">
                 {addModalApps.map((app) => (
@@ -782,7 +826,7 @@ export default function Home() {
                       <div className="text-sm font-medium">{app.name}</div>
                       <div className={`text-xs leading-snug mt-0.5 ${d ? "text-gray-400" : "text-gray-500"}`}>{app.description}</div>
                       <div className="flex flex-wrap gap-1 mt-1.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
                           {app.brand}
                         </span>
                         {app.tags.map((tag) => (
@@ -807,13 +851,13 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, d, onEdit, onRemove }: {
-  app: App; url: string; payment?: Payment; d: boolean;
+function AppCard({ app, url, payment, currency, d, onEdit, onRemove }: {
+  app: App; url: string; payment?: Payment; currency: string; d: boolean;
   onEdit: () => void; onRemove: () => void;
 }) {
   const tooltipMeta = [
     app.brand,
-    payment ? paymentLabel(payment) : null,
+    payment ? paymentLabel(payment, currency) : null,
     payment ? paymentDueLabel(payment) : null,
   ]
     .filter(Boolean)
@@ -836,7 +880,7 @@ function AppCard({ app, url, payment, d, onEdit, onRemove }: {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
         <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
-        {payment && <PaymentBadge payment={payment} d={d} />}
+        {payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
         {payment && paymentDueLabel(payment) && (
           <span className={`text-[10px] leading-none ${d ? "text-gray-500" : "text-gray-400"}`}>
             {paymentDueLabel(payment)}
