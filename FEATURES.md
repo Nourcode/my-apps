@@ -16,25 +16,44 @@ A running record of every feature implemented in the app. Update this file whene
 
 ## Organization & Navigation
 
-- **Category grouping** — apps automatically grouped by their tags (e.g. Productivity, Design, Dev Tools)
+- **Pinned apps** — star any app in its detail modal to pin it; pinned apps appear in a dedicated "Pinned" row above all categories with an amber pin badge; pin state persists in localStorage and exports/imports with your hub data
+- **Personal / Business tagging** — mark any app as Personal (default) or Business via the Use selector in its detail modal; Business apps show an indigo "Business" chip on their card and in the tooltip; filter the hub by Personal or Business using toolbar chips (visible once at least one app is set to Business)
+- **Category grouping** — apps automatically grouped by their tags (e.g. Productivity, Design, Dev Tools); multi-tag apps appear only once (under their first tag) to avoid duplication
 - **Category filter** — click a tag pill in the toolbar to view only apps in that category
 - **Search** — real-time search by app name, filters the visible grid
 - **Keyboard shortcuts** — press `/` or `⌘K` (Mac) / `Ctrl+K` (Windows) to jump to search; `Escape` clears and blurs
 - **Search hint** — the search bar shows the correct shortcut hint based on the user's OS (Mac vs Windows)
 
+## Data Portability
+
+- **Export JSON** — download all hub data as a JSON file
+- **Import JSON** — restore or transfer your hub from a previously exported file
+- **Export calendar (.ics)** — downloads a billing calendar file; each active paid app with a billing date becomes a recurring calendar event (monthly → `RRULE:FREQ=MONTHLY`, annual → `RRULE:FREQ=YEARLY`, one-time → single event). Import into Apple Calendar, Google Calendar, or Outlook — no server needed
+- **Share** — generate a read-only link to share your app list (apps and URLs only, no private data)
+
 ## App Details & Customization
 
 - **Custom URL** — override the default link for any app with a custom URL
+- **Account email** — optionally record which email you use for each app; shown in the hover tooltip in sky blue; stored locally, never sent to any server
 - **Notes** — add freeform notes to any app; displayed in the card tooltip on hover (amber italic text)
 - **App status** — set each app to Active, Trial, or Cancelled:
   - Active: default, no badge
   - Trial: violet "Trial" badge on the card
   - Cancelled: card dimmed to 50% opacity with a gray "Cancelled" chip
 
+## Bank Tracking
+
+- **Bank catalog** — curated list of top US banks (Chase, Bank of America, Wells Fargo, Citibank, Capital One) with name, logo, description, and country
+- **Bank assignment** — optionally link any app to a bank via the app detail modal; displayed as a selectable list of mini-cards (logo, name, description, country flag)
+- **Bank on app card** — the assigned bank's favicon appears in the bottom-left corner of the card
+- **Filter by bank** — bank chips appear in the filter bar once any app has a bank assigned; click to show only apps linked to that bank
+
 ## Payment Tracking
 
 - **Payment type** — mark each app as Free or Paid
 - **Paid details** — enter amount, billing period (Monthly / Annual / Once), and optional billing date (day, and month for annual)
+- **Payment method** — optionally tag each paid app with the payment method used (Visa, Mastercard, Amex, PayPal, Apple Pay, Google Pay, Other); shown on the card, in the tooltip, and billing overview
+- **Filter by payment method** — method chips appear in the filter bar once any app has a method set; click to show only apps using that method
 - **Payment badge** — shown on the card for active paid/free apps; hidden for trial and cancelled
 - **Due date label** — shown on the card when a billing date is set
 - **Billing alerts** — pulsing orange dot on the card + orange due date text when payment is due within 7 days (active apps only; trial and cancelled excluded)
@@ -48,6 +67,12 @@ A running record of every feature implemented in the app. Update this file whene
   - `/mo` chip → Monthly subscriptions with per-app amounts and due dates
   - `/yr` chip → Annual subscriptions with per-app amounts, due dates, and a monthly equivalent (~X/mo)
   - One-time chip → One-time purchases with totals
+
+## Versioning & Changelog
+
+- **Version badge** — current version shown as a small chip next to the subtitle in the header; click to open the changelog
+- **Changelog modal** — "What's New" view showing all versions with release date, label, and categorized changes (New / Improved / Fixed)
+- **`changelog.ts`** — structured data file tracking all versions; update it each release to keep the in-app history accurate
 
 ## Visuals & UX
 

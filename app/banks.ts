@@ -1,0 +1,173 @@
+export type Bank = {
+  name: string;
+  url: string;
+  icon: string;
+  description: string;
+  country: string;
+  flag: string;
+};
+
+const banks: Bank[] = [
+  {
+    name: "Airwallex",
+    url: "https://airwallex.com",
+    icon: "https://www.google.com/s2/favicons?domain=airwallex.com&sz=64",
+    description: "Global financial platform for businesses to collect, hold, and send money across 150+ countries.",
+    country: "Australia",
+    flag: "🇦🇺",
+  },
+  {
+    name: "Bank of America",
+    url: "https://bankofamerica.com",
+    icon: "https://www.google.com/s2/favicons?domain=bankofamerica.com&sz=64",
+    description: "Major US financial institution offering banking, credit cards, loans, and investment services.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Bluevine",
+    url: "https://bluevine.com",
+    icon: "https://www.google.com/s2/favicons?domain=bluevine.com&sz=64",
+    description: "Online banking for small businesses with high-yield checking accounts and lines of credit.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "BNP Paribas",
+    url: "https://bnpparibas.fr",
+    icon: "https://www.google.com/s2/favicons?domain=bnpparibas.fr&sz=64",
+    description: "France's largest bank, offering personal and corporate banking, insurance, and investment services worldwide.",
+    country: "France",
+    flag: "🇫🇷",
+  },
+  {
+    name: "Boursobank",
+    url: "https://boursobank.com",
+    icon: "https://www.google.com/s2/favicons?domain=boursobank.com&sz=64",
+    description: "France's leading online bank, offering no-fee accounts, savings, credit cards, and investment products.",
+    country: "France",
+    flag: "🇫🇷",
+  },
+  {
+    name: "Capital One",
+    url: "https://capitalone.com",
+    icon: "https://www.google.com/s2/favicons?domain=capitalone.com&sz=64",
+    description: "Digital-first US bank known for credit cards, no-fee checking accounts, and auto loans.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Chase",
+    url: "https://chase.com",
+    icon: "https://www.google.com/s2/favicons?domain=chase.com&sz=64",
+    description: "One of the largest US banks offering personal and business banking, credit cards, and investments.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Citibank",
+    url: "https://citi.com",
+    icon: "https://www.google.com/s2/favicons?domain=citi.com&sz=64",
+    description: "Global bank with strong US presence, known for credit cards, consumer banking, and wealth management.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "HSBC",
+    url: "https://hsbc.com",
+    icon: "https://www.google.com/s2/favicons?domain=hsbc.com&sz=64",
+    description: "One of the world's largest banks offering personal, business, and private banking across 60+ countries.",
+    country: "United Kingdom",
+    flag: "🇬🇧",
+  },
+  {
+    name: "Mercury",
+    url: "https://mercury.com",
+    icon: "https://www.google.com/s2/favicons?domain=mercury.com&sz=64",
+    description: "Banking built for startups and tech companies, with powerful API access and no monthly fees.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "N26 Personal",
+    url: "https://n26.com",
+    icon: "https://www.google.com/s2/favicons?domain=n26.com&sz=64",
+    description: "European mobile bank with fee-free accounts, instant notifications, and global money transfers.",
+    country: "Germany",
+    flag: "🇩🇪",
+  },
+  {
+    name: "Payoneer",
+    url: "https://payoneer.com",
+    icon: "https://www.google.com/s2/favicons?domain=payoneer.com&sz=64",
+    description: "Global payment platform for freelancers and businesses to receive and send international payments.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Qonto",
+    url: "https://qonto.com",
+    icon: "https://www.google.com/s2/favicons?domain=qonto.com&sz=64",
+    description: "Business banking platform built for freelancers and SMEs, with integrated invoicing and accounting.",
+    country: "France",
+    flag: "🇫🇷",
+  },
+  {
+    name: "Relay",
+    url: "https://relayfi.com",
+    icon: "https://www.google.com/s2/favicons?domain=relayfi.com&sz=64",
+    description: "Business banking platform with multi-account cash flow management and no transaction fees.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Revolut Business",
+    url: "https://business.revolut.com",
+    icon: "https://www.google.com/s2/favicons?domain=revolut.com&sz=64",
+    description: "Business account with multi-currency wallets, expense management, and global payments.",
+    country: "United Kingdom",
+    flag: "🇬🇧",
+  },
+  {
+    name: "Revolut Personal",
+    url: "https://revolut.com",
+    icon: "https://www.google.com/s2/favicons?domain=revolut.com&sz=64",
+    description: "Personal banking app with multi-currency accounts, spending insights, budgeting, and fee-free international transfers.",
+    country: "United Kingdom",
+    flag: "🇬🇧",
+  },
+  {
+    name: "SHINE",
+    url: "https://shine.fr",
+    icon: "https://www.google.com/s2/favicons?domain=shine.fr&sz=64",
+    description: "Business banking for French freelancers and micro-businesses with invoicing, VAT tracking, and company registration.",
+    country: "France",
+    flag: "🇫🇷",
+  },
+  {
+    name: "Wells Fargo",
+    url: "https://wellsfargo.com",
+    icon: "https://www.google.com/s2/favicons?domain=wellsfargo.com&sz=64",
+    description: "Diversified US bank providing consumer banking, mortgages, investments, and business services.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
+  {
+    name: "Wise Business",
+    url: "https://wise.com/gb/business",
+    icon: "https://www.google.com/s2/favicons?domain=wise.com&sz=64",
+    description: "Low-cost international business transfers with multi-currency accounts and real exchange rates.",
+    country: "United Kingdom",
+    flag: "🇬🇧",
+  },
+  {
+    name: "Wise Personal",
+    url: "https://wise.com",
+    icon: "https://www.google.com/s2/favicons?domain=wise.com&sz=64",
+    description: "Personal multi-currency account for receiving, holding, and sending money internationally at real exchange rates.",
+    country: "United Kingdom",
+    flag: "🇬🇧",
+  },
+];
+
+export default banks;

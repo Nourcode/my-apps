@@ -58,3 +58,8 @@ Both are separate cards because they serve different purposes, even though they 
 ## File location rule
 All project notes, design docs, and memory files must be created **inside this project folder** so they are tracked by Git and pushed to GitHub.
 Do not save project context to `~/.claude/` — those files are local only and won't sync.
+
+## Changelog rule
+Whenever new code is pushed or a feature is completed, update `changelog.ts` with a new version entry (CalVer format: `YYYY.MM.DD`, or `YYYY.MM.DD.N` for multiple releases in the same day).
+Each entry needs: version, date, label (short name for the release), and grouped changes under New / Improved / Fixed.
+The version chip in the header auto-reads `changelog[0].version`, so the UI always reflects the latest entry.

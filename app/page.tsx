@@ -2,18 +2,40 @@
 
 import { useState, useEffect, useRef } from "react";
 import catalog, { type App } from "./catalog";
+import bankCatalog from "./banks";
+import changelog from "./changelog";
 
 type PaymentPeriod = "monthly" | "annually" | "once";
+type PaymentMethod = "visa" | "mastercard" | "amex" | "paypal" | "apple" | "google" | "other";
 type Payment = {
   type: "free" | "paid";
   amount?: string;
   period?: PaymentPeriod;
   day?: number;
   month?: number;
+  method?: PaymentMethod;
+};
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "visa", label: "Visa" },
+  { value: "mastercard", label: "Mastercard" },
+  { value: "amex", label: "Amex" },
+  { value: "paypal", label: "PayPal" },
+  { value: "apple", label: "Apple Pay" },
+  { value: "google", label: "Google Pay" },
+  { value: "other", label: "Other" },
+];
+
+const METHOD_LABEL: Record<PaymentMethod, string> = {
+  visa: "Visa", mastercard: "Mastercard", amex: "Amex",
+  paypal: "PayPal", apple: "Apple Pay", google: "Google Pay", other: "Other",
 };
 type Payments = Record<string, Payment>;
+type BankAssignments = Record<string, string>;
 type AppStatus = "active" | "trial" | "cancelled";
 type Statuses = Record<string, AppStatus>;
+type AppUse = "personal" | "business";
+type AppUses = Record<string, AppUse>;
 type DeleteTarget = { type: "all" | "category" | "selected"; tag?: string };
 
 const CURRENCIES = [
@@ -134,12 +156,35 @@ function CheckIcon() {
   );
 }
 
+function CalendarIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  );
+}
+
 function ExternalLinkIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
       <polyline points="15 3 21 3 21 9"/>
       <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  );
+}
+
+function PinIcon({ size = 14, filled = false }: { size?: number; filled?: boolean }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" x2="12" y1="17" y2="22" fill="none" stroke="currentColor" strokeWidth="2"/>
+      <path d="M5 17H19V16L17 10V4H7V10L5 16Z"
+        fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"/>
+      <path d="M9 4V1H15V4" fill="none" stroke="currentColor" strokeWidth="2"/>
     </svg>
   );
 }
@@ -242,8 +287,20 @@ export default function Home() {
   const [payPeriodDraft, setPayPeriodDraft] = useState<PaymentPeriod>("monthly");
   const [payDayDraft, setPayDayDraft] = useState("");
   const [payMonthDraft, setPayMonthDraft] = useState("");
+  const [payMethodDraft, setPayMethodDraft] = useState<PaymentMethod | "">("");
+  const [bankAssignments, setBankAssignments] = useState<BankAssignments>({});
+  const [bankDraft, setBankDraft] = useState("");
+  const [showBankPicker, setShowBankPicker] = useState(false);
+  const [bankSearch, setBankSearch] = useState("");
+  const [activeBank, setActiveBank] = useState<string | null>(null);
+  const [activePayMethod, setActivePayMethod] = useState<PaymentMethod | null>(null);
+  const [uses, setUses] = useState<AppUses>({});
+  const [useDraft, setUseDraft] = useState<AppUse>("personal");
+  const [activeUse, setActiveUse] = useState<AppUse | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [notesDraft, setNotesDraft] = useState("");
+  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [emailDraft, setEmailDraft] = useState("");
   const [statuses, setStatuses] = useState<Statuses>({});
   const [statusDraft, setStatusDraft] = useState<AppStatus>("active");
   const [selectMode, setSelectMode] = useState(false);
@@ -268,7 +325,9 @@ export default function Home() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [billingView, setBillingView] = useState<"monthly" | "annually" | "once" | null>(null);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [lastEdited, setLastEdited] = useState<Record<string, string>>({});
+  const [pinnedApps, setPinnedApps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const savedList = localStorage.getItem("my-app-list");
@@ -285,6 +344,14 @@ export default function Home() {
     if (savedStatuses) setStatuses(JSON.parse(savedStatuses));
     const savedLastEdited = localStorage.getItem("app-last-edited");
     if (savedLastEdited) setLastEdited(JSON.parse(savedLastEdited));
+    const savedBanks = localStorage.getItem("app-banks");
+    if (savedBanks) setBankAssignments(JSON.parse(savedBanks));
+    const savedPinned = localStorage.getItem("app-pinned");
+    if (savedPinned) setPinnedApps(new Set(JSON.parse(savedPinned)));
+    const savedUses = localStorage.getItem("app-uses");
+    if (savedUses) setUses(JSON.parse(savedUses));
+    const savedEmails = localStorage.getItem("app-emails");
+    if (savedEmails) setEmails(JSON.parse(savedEmails));
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
   }, []);
 
@@ -368,6 +435,10 @@ export default function Home() {
         notes: notes[app.name] ?? null,
         status: statuses[app.name] ?? null,
         lastEdited: lastEdited[app.name] ?? null,
+        bank: bankAssignments[app.name] ?? null,
+        pinned: pinnedApps.has(app.name),
+        use: uses[app.name] ?? "personal",
+        email: emails[app.name] ?? null,
       }));
     const blob = new Blob([JSON.stringify({ currency, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -377,6 +448,73 @@ export default function Home() {
     a.click();
     URL.revokeObjectURL(url);
     showToast("Exported!");
+  }
+
+  function exportCalendar() {
+    const toExport = myAppNames
+      .filter((name) => {
+        const pay = payments[name];
+        return pay?.type === "paid" && pay.day && (statuses[name] ?? "active") === "active";
+      })
+      .map((name) => ({ name, pay: payments[name]! }));
+
+    if (toExport.length === 0) {
+      showToast("No active paid apps with billing dates to export.");
+      return;
+    }
+
+    const now = new Date();
+    const stamp = now.toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
+
+    const lines: string[] = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Helio//Billing Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+
+    for (const { name, pay } of toExport) {
+      const label = pay.amount
+        ? `${name} — ${formatPaidLabel(pay.amount, currency, pay.period)}`
+        : `${name} — Payment due`;
+
+      let year = now.getFullYear();
+      let month = now.getMonth() + 1;
+      const day = pay.day!;
+
+      if (pay.period === "annually" && pay.month) {
+        month = pay.month;
+        if (new Date(year, month - 1, day) < now) year += 1;
+      }
+
+      const dtstart = `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`;
+      const end = new Date(year, month - 1, day + 1);
+      const dtend = `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, "0")}${String(end.getDate()).padStart(2, "0")}`;
+      const uid = `helio-${name.toLowerCase().replace(/[^a-z0-9]/g, "-")}@helio.app`;
+
+      lines.push("BEGIN:VEVENT");
+      lines.push(`UID:${uid}`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`DTSTART;VALUE=DATE:${dtstart}`);
+      lines.push(`DTEND;VALUE=DATE:${dtend}`);
+      lines.push(`SUMMARY:💳 ${label.replace(/[,;\\]/g, "\\$&")}`);
+      lines.push("DESCRIPTION:Billing reminder — Helio");
+      if (pay.period === "monthly") lines.push("RRULE:FREQ=MONTHLY");
+      else if (pay.period === "annually") lines.push("RRULE:FREQ=YEARLY");
+      lines.push("END:VEVENT");
+    }
+
+    lines.push("END:VCALENDAR");
+
+    const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "helio-billing.ics";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${toExport.length} billing reminder${toExport.length !== 1 ? "s" : ""}!`);
   }
 
   function importApps(file: File) {
@@ -392,6 +530,10 @@ export default function Home() {
         const newNotes: Record<string, string> = {};
         const newStatuses: Statuses = {};
         const newLastEdited: Record<string, string> = {};
+        const newBankAssignments: BankAssignments = {};
+        const newPinned = new Set<string>();
+        const newUsesImp: AppUses = {};
+        const newEmailsImp: Record<string, string> = {};
         for (const item of data) {
           const catalogApp = catalog.find((a) => a.name === item.name);
           if (!catalogApp) continue;
@@ -401,6 +543,10 @@ export default function Home() {
           if (item.notes) newNotes[item.name] = item.notes;
           if (item.status) newStatuses[item.name] = item.status;
           if (item.lastEdited) newLastEdited[item.name] = item.lastEdited;
+          if (item.bank) newBankAssignments[item.name] = item.bank;
+          if (item.pinned) newPinned.add(item.name);
+          if (item.use === "business") newUsesImp[item.name] = "business";
+          if (item.email) newEmailsImp[item.name] = item.email;
         }
         if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
         setMyAppNames(validNames);
@@ -409,12 +555,20 @@ export default function Home() {
         setNotes(newNotes);
         setStatuses(newStatuses);
         setLastEdited(newLastEdited);
+        setBankAssignments(newBankAssignments);
+        setPinnedApps(newPinned);
+        setUses(newUsesImp);
+        setEmails(newEmailsImp);
         localStorage.setItem("my-app-list", JSON.stringify(validNames));
         localStorage.setItem("custom-urls", JSON.stringify(newUrls));
         localStorage.setItem("app-payments", JSON.stringify(newPayments));
         localStorage.setItem("app-notes", JSON.stringify(newNotes));
         localStorage.setItem("app-statuses", JSON.stringify(newStatuses));
         localStorage.setItem("app-last-edited", JSON.stringify(newLastEdited));
+        localStorage.setItem("app-banks", JSON.stringify(newBankAssignments));
+        localStorage.setItem("app-pinned", JSON.stringify([...newPinned]));
+        localStorage.setItem("app-uses", JSON.stringify(newUsesImp));
+        localStorage.setItem("app-emails", JSON.stringify(newEmailsImp));
         showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
       } catch {
         showToast("Invalid file — import failed.");
@@ -438,12 +592,20 @@ export default function Home() {
       setNotes({});
       setStatuses({});
       setLastEdited({});
+      setBankAssignments({});
+      setPinnedApps(new Set());
+      setUses({});
+      setEmails({});
       localStorage.setItem("my-app-list", JSON.stringify([]));
       localStorage.removeItem("custom-urls");
       localStorage.removeItem("app-payments");
       localStorage.removeItem("app-notes");
       localStorage.removeItem("app-statuses");
       localStorage.removeItem("app-last-edited");
+      localStorage.removeItem("app-banks");
+      localStorage.removeItem("app-pinned");
+      localStorage.removeItem("app-uses");
+      localStorage.removeItem("app-emails");
 
     } else if (deleteTarget.type === "category" && deleteTarget.tag) {
       const toRemove = new Set(
@@ -461,19 +623,31 @@ export default function Home() {
       const updatedNotes = { ...notes };
       const updatedStatuses = { ...statuses };
       const updatedLastEdited = { ...lastEdited };
-      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; });
+      const updatedBankAssignments = { ...bankAssignments };
+      const updatedPinnedSel = new Set(pinnedApps);
+      const updatedUsesSel = { ...uses };
+      const updatedEmailsSel = { ...emails };
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; });
       setMyAppNames(updated);
       setCustomUrls(updatedUrls);
       setPayments(updatedPayments);
       setNotes(updatedNotes);
       setStatuses(updatedStatuses);
       setLastEdited(updatedLastEdited);
+      setBankAssignments(updatedBankAssignments);
+      setPinnedApps(updatedPinnedSel);
+      setUses(updatedUsesSel);
+      setEmails(updatedEmailsSel);
       localStorage.setItem("my-app-list", JSON.stringify(updated));
       localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
       localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
       localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
       localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
       localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
+      localStorage.setItem("app-banks", JSON.stringify(updatedBankAssignments));
+      localStorage.setItem("app-pinned", JSON.stringify([...updatedPinnedSel]));
+      localStorage.setItem("app-uses", JSON.stringify(updatedUsesSel));
+      localStorage.setItem("app-emails", JSON.stringify(updatedEmailsSel));
       setSelectedApps(new Set());
       setSelectMode(false);
     }
@@ -510,18 +684,34 @@ export default function Home() {
     delete updatedNotes[name];
     delete updatedStatuses[name];
     delete updatedLastEdited[name];
+    const updatedBankAssignments = { ...bankAssignments };
+    delete updatedBankAssignments[name];
+    const updatedPinned = new Set(pinnedApps);
+    updatedPinned.delete(name);
+    const updatedUsesDel = { ...uses };
+    delete updatedUsesDel[name];
+    const updatedEmailsDel = { ...emails };
+    delete updatedEmailsDel[name];
     setMyAppNames(updated);
     setCustomUrls(updatedUrls);
     setPayments(updatedPayments);
     setNotes(updatedNotes);
     setStatuses(updatedStatuses);
     setLastEdited(updatedLastEdited);
+    setBankAssignments(updatedBankAssignments);
+    setPinnedApps(updatedPinned);
+    setUses(updatedUsesDel);
+    setEmails(updatedEmailsDel);
     localStorage.setItem("my-app-list", JSON.stringify(updated));
     localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
     localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
     localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
     localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
+    localStorage.setItem("app-banks", JSON.stringify(updatedBankAssignments));
+    localStorage.setItem("app-pinned", JSON.stringify([...updatedPinned]));
+    localStorage.setItem("app-uses", JSON.stringify(updatedUsesDel));
+    localStorage.setItem("app-emails", JSON.stringify(updatedEmailsDel));
     setEditing(null);
   }
 
@@ -534,8 +724,21 @@ export default function Home() {
     setPayPeriodDraft(pay?.period ?? "monthly");
     setPayDayDraft(pay?.day ? String(pay.day) : "");
     setPayMonthDraft(pay?.month ? String(pay.month) : "");
+    setPayMethodDraft(pay?.method ?? "");
+    setBankDraft(bankAssignments[name] ?? "");
+    setShowBankPicker(false);
+    setBankSearch("");
     setNotesDraft(notes[name] ?? "");
+    setEmailDraft(emails[name] ?? "");
     setStatusDraft(statuses[name] ?? "active");
+    setUseDraft(uses[name] ?? "personal");
+  }
+
+  function togglePin(name: string) {
+    const updated = new Set(pinnedApps);
+    if (updated.has(name)) updated.delete(name); else updated.add(name);
+    setPinnedApps(updated);
+    localStorage.setItem("app-pinned", JSON.stringify([...updated]));
   }
 
   function saveEdit() {
@@ -554,6 +757,7 @@ export default function Home() {
               period: payPeriodDraft,
               ...(payDayDraft ? { day: parseInt(payDayDraft) } : {}),
               ...(payMonthDraft && payPeriodDraft === "annually" ? { month: parseInt(payMonthDraft) } : {}),
+              ...(payMethodDraft ? { method: payMethodDraft as PaymentMethod } : {}),
             },
     };
     setPayments(updatedPayments);
@@ -566,6 +770,14 @@ export default function Home() {
     }
     setNotes(updatedNotes);
     localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
+    const updatedEmails = { ...emails };
+    if (emailDraft.trim()) {
+      updatedEmails[editing] = emailDraft.trim();
+    } else {
+      delete updatedEmails[editing];
+    }
+    setEmails(updatedEmails);
+    localStorage.setItem("app-emails", JSON.stringify(updatedEmails));
     const updatedStatuses = { ...statuses };
     if (statusDraft === "active") {
       delete updatedStatuses[editing];
@@ -577,6 +789,22 @@ export default function Home() {
     const updatedLastEdited = { ...lastEdited, [editing]: new Date().toISOString() };
     setLastEdited(updatedLastEdited);
     localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
+    const updatedBankAssignments = { ...bankAssignments };
+    if (bankDraft && payTypeDraft === "paid") {
+      updatedBankAssignments[editing] = bankDraft;
+    } else {
+      delete updatedBankAssignments[editing];
+    }
+    setBankAssignments(updatedBankAssignments);
+    localStorage.setItem("app-banks", JSON.stringify(updatedBankAssignments));
+    const updatedUses = { ...uses };
+    if (useDraft === "personal") {
+      delete updatedUses[editing];
+    } else {
+      updatedUses[editing] = useDraft;
+    }
+    setUses(updatedUses);
+    localStorage.setItem("app-uses", JSON.stringify(updatedUses));
     setEditing(null);
   }
 
@@ -588,7 +816,22 @@ export default function Home() {
 
   const filteredApps = myApps
     .filter((app) => !activeTag || app.tags.includes(activeTag))
+    .filter((app) => !activeBank || bankAssignments[app.name] === activeBank)
+    .filter((app) => !activePayMethod || payments[app.name]?.method === activePayMethod)
+    .filter((app) => !activeUse || (uses[app.name] ?? "personal") === activeUse)
     .filter((app) => app.name.toLowerCase().includes(search.toLowerCase()));
+  const hasBusinessApp = myAppNames.some((n) => uses[n] === "business");
+
+  const usedBanks = Array.from(new Set(myAppNames.map((n) => bankAssignments[n]).filter(Boolean))).sort() as string[];
+  const usedPayMethods = Array.from(new Set(myAppNames.map((n) => payments[n]?.method).filter((m): m is PaymentMethod => !!m))).sort();
+
+  // Each app is shown only once in the category grid — under its first matching tag.
+  // Multi-tag apps (e.g. Unity: Dev + Gaming) are still discoverable via the filter chips.
+  const primaryTagForApp = new Map<string, string>();
+  for (const app of myApps) {
+    const primary = availableTags.find((t) => app.tags.includes(t));
+    if (primary) primaryTagForApp.set(app.name, primary);
+  }
 
   const availableToAdd = catalog.filter((a) => !myAppNames.includes(a.name));
   const addModalBaseApps = (addModalTag
@@ -640,7 +883,13 @@ export default function Home() {
             <SunIcon size={28} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
+              <button onClick={() => setShowChangelog(true)}
+                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors self-center ${d ? "bg-white/8 text-gray-500 hover:bg-white/12 hover:text-gray-300" : "bg-black/[0.06] text-gray-400 hover:bg-black/10 hover:text-gray-600"}`}>
+                {changelog[0].version}
+              </button>
+            </div>
             <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Everything orbits here.</p>
           </div>
         </div>
@@ -665,6 +914,10 @@ export default function Home() {
           <button onClick={exportApps} title="Export as JSON"
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             <DownloadIcon />
+          </button>
+          <button onClick={exportCalendar} title="Export billing calendar (.ics)"
+            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            <CalendarIcon />
           </button>
           <input ref={importInputRef} type="file" accept=".json,application/json" className="hidden"
             onChange={(e) => {
@@ -735,20 +988,64 @@ export default function Home() {
           </kbd>
         </div>
 
-        {availableTags.length > 0 && <div className={`hidden sm:block h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />}
+        {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0) && (
+          <div className={`hidden sm:block h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />
+        )}
 
-        {availableTags.length > 0 && (
+        {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0) && (
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setActiveTag(null)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === null ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+            {/* All — clears every filter */}
+            <button onClick={() => { setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === null && activeBank === null && activePayMethod === null && activeUse === null ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
               All
             </button>
+
+            {/* Category chips */}
             {availableTags.map((tag) => (
-              <button key={tag} onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              <button key={tag} onClick={() => { setActiveTag(activeTag === tag ? null : tag); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === tag ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
                 {tag}
               </button>
             ))}
+
+            {/* Bank filter chips */}
+            {usedBanks.length > 0 && availableTags.length > 0 && (
+              <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
+            )}
+            {usedBanks.map((bank) => {
+              const b = bankCatalog.find((x) => x.name === bank);
+              return (
+                <button key={bank} onClick={() => { setActiveBank(activeBank === bank ? null : bank); setActiveTag(null); setActivePayMethod(null); setActiveUse(null); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeBank === bank ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+                  {b && <img src={b.icon} alt={b.name} className="w-3.5 h-3.5 rounded" />}
+                  {bank}
+                </button>
+              );
+            })}
+
+            {/* Payment method filter chips */}
+            {usedPayMethods.length > 0 && (usedBanks.length > 0 || availableTags.length > 0) && (
+              <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
+            )}
+            {usedPayMethods.map((method) => (
+              <button key={method} onClick={() => { setActivePayMethod(activePayMethod === method ? null : method); setActiveTag(null); setActiveBank(null); setActiveUse(null); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activePayMethod === method ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+                {METHOD_LABEL[method]}
+              </button>
+            ))}
+
+            {/* Use filter chips — shown once at least one app is set to Business */}
+            {hasBusinessApp && (
+              <>
+                <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
+                {(["personal", "business"] as AppUse[]).map((u) => (
+                  <button key={u} onClick={() => { setActiveUse(activeUse === u ? null : u); setActiveTag(null); setActiveBank(null); setActivePayMethod(null); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${activeUse === u ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+                    {u}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
 
@@ -760,11 +1057,12 @@ export default function Home() {
       </div>
 
       {/* App grid */}
-      {activeTag || search ? (
+      {activeTag || activeBank || activePayMethod || activeUse || search ? (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-              payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]} d={d}
+              payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
+              bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} d={d}
               selectMode={selectMode} isSelected={selectedApps.has(app.name)}
               onOpen={() => openAppDetail(app.name)}
               onToggleSelect={() => toggleSelect(app.name)}
@@ -776,6 +1074,27 @@ export default function Home() {
         </div>
       ) : (
         <div className="flex flex-col gap-10">
+          {/* Pinned section — shown before categories when at least one hub app is pinned */}
+          {myApps.some((a) => pinnedApps.has(a.name)) && (
+            <section>
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="text-amber-500"><PinIcon size={12} filled /></span>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-500">Pinned</h2>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
+                {myApps.filter((a) => pinnedApps.has(a.name)).map((app) => (
+                  <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
+                    payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
+                    bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} pinned d={d}
+                    selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+                    onOpen={() => openAppDetail(app.name)}
+                    onToggleSelect={() => toggleSelect(app.name)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {availableTags.length === 0 ? (
             <p className={`text-sm ${d ? "text-gray-600" : "text-gray-400"}`}>
               No apps yet. Use &quot;+ Add App&quot; to get started.
@@ -792,9 +1111,10 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
-                  {myApps.filter((a) => a.tags.includes(tag)).map((app) => (
+                  {myApps.filter((a) => primaryTagForApp.get(a.name) === tag).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-                      payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]} d={d}
+                      payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
+                      bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} d={d}
                       selectMode={selectMode} isSelected={selectedApps.has(app.name)}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
@@ -858,10 +1178,21 @@ export default function Home() {
                   {lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}
                 </div>
               </div>
-              <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
-                className={`flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
-                Visit <ExternalLinkIcon />
-              </a>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => togglePin(editing!)}
+                  title={pinnedApps.has(editing!) ? "Unpin" : "Pin to top"}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                    pinnedApps.has(editing!)
+                      ? "bg-amber-500/15 text-amber-500"
+                      : d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  }`}>
+                  <PinIcon size={14} filled={pinnedApps.has(editing!)} />
+                </button>
+                <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
+                  Visit <ExternalLinkIcon />
+                </a>
+              </div>
             </div>
 
             {/* URL */}
@@ -870,6 +1201,18 @@ export default function Home() {
               className={inputCls}
               value={urlDraft} placeholder="https://..." onChange={(e) => setUrlDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus
+            />
+
+            {/* Account email */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>
+              Account Email <span className={`text-[10px] font-normal normal-case ${d ? "text-gray-600" : "text-gray-400"}`}>— optional</span>
+            </p>
+            <input
+              type="email"
+              className={inputCls}
+              value={emailDraft}
+              placeholder="you@example.com"
+              onChange={(e) => setEmailDraft(e.target.value)}
             />
 
             {/* Status */}
@@ -889,6 +1232,21 @@ export default function Home() {
                       : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}>
                   {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Use */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Use</p>
+            <div className="flex gap-2">
+              {(["personal", "business"] as AppUse[]).map((u) => (
+                <button key={u} onClick={() => setUseDraft(u)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-colors ${
+                    useDraft === u
+                      ? u === "personal" ? "bg-sky-500 text-white" : "bg-indigo-500 text-white"
+                      : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}>
+                  {u}
                 </button>
               ))}
             </div>
@@ -913,9 +1271,9 @@ export default function Home() {
               <div className="flex flex-col gap-2">
                 <div className="relative">
                   <input
-                    type="number" min="0" step="0.01" placeholder="9.99" value={payAmountDraft}
-                    onChange={(e) => setPayAmountDraft(e.target.value)}
-                    className={inputCls}
+                    type="text" inputMode="decimal" placeholder="9.99" value={payAmountDraft}
+                    onChange={(e) => setPayAmountDraft(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className={`${inputCls} pr-12`}
                   />
                   <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none ${d ? "text-gray-500" : "text-gray-400"}`}>
                     {currency}
@@ -936,6 +1294,26 @@ export default function Home() {
                       {label}
                     </button>
                   ))}
+                </div>
+
+                {/* Payment method */}
+                <div className={`pt-3 mt-1 border-t ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                    Payment method <span className="normal-case font-normal opacity-60">— optional</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PAYMENT_METHODS.map(({ value, label }) => (
+                      <button key={value}
+                        onClick={() => setPayMethodDraft(payMethodDraft === value ? "" : value)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          payMethodDraft === value
+                            ? d ? "bg-white/20 text-white" : "bg-gray-900 text-white"
+                            : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        }`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {(payPeriodDraft === "monthly" || payPeriodDraft === "annually") && (
@@ -984,6 +1362,91 @@ export default function Home() {
               </div>
             )}
             </>)}
+
+            {/* Bank — only for paid apps */}
+            {payTypeDraft === "paid" && (
+              <div className={`mt-5 pt-4 border-t ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                  Bank <span className="normal-case font-normal opacity-60">— optional</span>
+                </p>
+
+                {/* Trigger field */}
+                <button onClick={() => setShowBankPicker(!showBankPicker)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors border ${
+                    d ? "bg-white/5 border-white/10 hover:bg-white/8" : "bg-gray-50 border-black/[0.08] hover:bg-gray-100"
+                  }`}>
+                  {bankDraft && bankCatalog.find((b) => b.name === bankDraft) ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={bankCatalog.find((b) => b.name === bankDraft)!.icon} alt={bankDraft} className="w-6 h-6 rounded-lg flex-shrink-0" />
+                      <span className={`flex-1 ${d ? "text-gray-200" : "text-gray-800"}`}>{bankDraft}</span>
+                      <span className="text-base flex-shrink-0">{bankCatalog.find((b) => b.name === bankDraft)?.flag}</span>
+                    </>
+                  ) : (
+                    <span className={`flex-1 ${d ? "text-gray-500" : "text-gray-400"}`}>No bank — tap to assign</span>
+                  )}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 transition-transform ${showBankPicker ? "rotate-180" : ""} ${d ? "text-gray-500" : "text-gray-400"}`}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {/* Searchable dropdown */}
+                {showBankPicker && (() => {
+                  const filtered = bankCatalog
+                    .filter((b) =>
+                      b.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
+                      b.country.toLowerCase().includes(bankSearch.toLowerCase())
+                    )
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                  return (
+                    <div className={`mt-1 rounded-xl border overflow-hidden shadow-lg ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+                      {/* Search input */}
+                      <div className={`px-3 py-2 border-b ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search banks…"
+                          value={bankSearch}
+                          onChange={(e) => setBankSearch(e.target.value)}
+                          className={`w-full text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+                        />
+                      </div>
+                      {/* Scrollable list */}
+                      <div className="max-h-52 overflow-y-auto">
+                        {filtered.length === 0 ? (
+                          <p className={`text-xs text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                            No banks match &quot;{bankSearch}&quot;
+                          </p>
+                        ) : filtered.map((b) => (
+                          <button key={b.name}
+                            onClick={() => { setBankDraft(b.name === bankDraft ? "" : b.name); setShowBankPicker(false); setBankSearch(""); }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                              bankDraft === b.name
+                                ? d ? "bg-white/10" : "bg-gray-100"
+                                : d ? "hover:bg-white/5" : "hover:bg-gray-50"
+                            }`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={b.icon} alt={b.name} className="w-7 h-7 rounded-lg flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-sm font-medium ${d ? "text-gray-200" : "text-gray-800"}`}>{b.name}</div>
+                              <div className={`text-xs mt-0.5 leading-snug ${d ? "text-gray-500" : "text-gray-400"}`}>{b.country}</div>
+                            </div>
+                            <span className="text-base flex-shrink-0">{b.flag}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {bankDraft && (
+                  <button onClick={() => setBankDraft("")}
+                    className={`mt-1.5 text-xs ${d ? "text-gray-600 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"}`}>
+                    Clear bank
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Notes */}
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Notes</p>
@@ -1123,7 +1586,12 @@ export default function Home() {
                         <div key={name} className="flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={app.icon} alt={app.name} className="w-7 h-7 rounded-lg flex-shrink-0" />
-                          <span className={`flex-1 text-sm ${d ? "text-gray-200" : "text-gray-800"}`}>{app.name}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm ${d ? "text-gray-200" : "text-gray-800"}`}>{app.name}</div>
+                            {pay.method && (
+                              <div className={`text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{METHOD_LABEL[pay.method]}</div>
+                            )}
+                          </div>
                           <div className="text-right">
                             <div className={`text-sm font-medium ${d ? "text-gray-200" : "text-gray-800"}`}>{fmtCurrency(parseFloat(pay.amount!))}</div>
                             {paymentDueLabel(pay) && (
@@ -1230,17 +1698,78 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Changelog modal */}
+      {showChangelog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowChangelog(false)}>
+          <div className={`rounded-2xl w-full max-w-md shadow-2xl border flex flex-col max-h-[85vh] ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className={`flex items-center justify-between px-6 pt-5 pb-4 border-b flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+              <div>
+                <h2 className="font-bold text-lg">What&apos;s New</h2>
+                <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Helio release history</p>
+              </div>
+              <button onClick={() => setShowChangelog(false)}
+                className={`w-8 h-8 flex items-center justify-center rounded-full text-lg leading-none transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                ×
+              </button>
+            </div>
+
+            {/* Version list */}
+            <div className="overflow-y-auto px-6 py-5 flex flex-col gap-8">
+              {changelog.map((v) => (
+                <div key={v.version}>
+                  {/* Version header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full font-mono ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"}`}>
+                      {v.version}
+                    </span>
+                    <span className={`text-sm font-semibold ${d ? "text-gray-200" : "text-gray-800"}`}>{v.label}</span>
+                  </div>
+
+                  {/* Change groups */}
+                  <div className="flex flex-col gap-3">
+                    {v.groups.map((g) => (
+                      <div key={g.category}>
+                        <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5 ${
+                          g.category === "New"
+                            ? d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-700"
+                            : g.category === "Improved"
+                            ? d ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-700"
+                            : d ? "bg-orange-500/15 text-orange-400" : "bg-orange-50 text-orange-700"
+                        }`}>
+                          {g.category}
+                        </span>
+                        <ul className="flex flex-col gap-1">
+                          {g.items.map((item, i) => (
+                            <li key={i} className={`text-xs flex gap-2 ${d ? "text-gray-400" : "text-gray-600"}`}>
+                              <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0 bg-current opacity-40" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, notes, status, d, selectMode, isSelected, onOpen, onToggleSelect }: {
-  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; d: boolean;
+function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, email, d, selectMode, isSelected, onOpen, onToggleSelect }: {
+  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; email?: string; d: boolean;
   selectMode: boolean; isSelected: boolean;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
+  const bankData = bank ? bankCatalog.find((b) => b.name === bank) : null;
   const daysUntilDue = payment ? getDaysUntilDue(payment) : null;
   const dueSoon = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7 && status !== "cancelled" && status !== "trial";
   const isCancelled = status === "cancelled";
@@ -1253,7 +1782,10 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
   const showPaymentInfo = status !== "trial" && status !== "cancelled";
   const tooltipMeta = [
     app.brand,
+    use === "business" ? "Business" : "Personal",
+    bankData ? bankData.name : null,
     showPaymentInfo && payment ? paymentLabel(payment, currency) : null,
+    showPaymentInfo && payment?.method ? METHOD_LABEL[payment.method] : null,
     showPaymentInfo && payment ? paymentDueLabel(payment) : null,
     showPaymentInfo ? dueSoonLabel : null,
   ]
@@ -1270,6 +1802,9 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
           {tooltipMeta && (
             <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>
           )}
+          {email && (
+            <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>
+          )}
           {notes && (
             <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>
           )}
@@ -1284,11 +1819,30 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
       }`}>
         {/* Billing alert dot */}
         {dueSoon && !selectMode && (
-          <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+          <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
+        )}
+        {/* Bank + payment method overlays */}
+        {(bankData || (payment?.method && !isTrial && !isCancelled)) && !selectMode && (
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
+            {bankData
+              ? <img src={bankData.icon} alt={bankData.name} className="w-5 h-5 rounded-md" title={bankData.name} />
+              : <span />
+            }
+            {payment?.method && !isTrial && !isCancelled && (
+              <span className={`text-[9px] font-medium ${d ? "text-gray-500" : "text-gray-400"}`}>{METHOD_LABEL[payment.method]}</span>
+            )}
+          </div>
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
         <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
+        {!isTrial && !isCancelled && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+            use === "business"
+              ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"
+              : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"
+          }`}>{use === "business" ? "Business" : "Personal"}</span>
+        )}
         {isTrial && (
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
         )}
@@ -1302,6 +1856,13 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
           </span>
         )}
       </div>
+
+      {/* Pin badge (normal mode only) */}
+      {!selectMode && pinned && (
+        <div className="absolute top-2.5 right-2.5 text-amber-500">
+          <PinIcon size={20} filled />
+        </div>
+      )}
 
       {/* Select mode indicator */}
       {selectMode && (
