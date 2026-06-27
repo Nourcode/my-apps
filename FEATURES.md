@@ -1,0 +1,67 @@
+# Helio — Feature List
+
+A running record of every feature implemented in the app. Update this file whenever a new feature is added.
+
+---
+
+## App Management
+
+- **App catalog** — curated list of popular apps with names, logos, descriptions, brands, and tags
+- **Add apps** — add any app from the catalog via the "+ Add App" button or the per-category "+ Add" button
+- **Remove apps** — remove a single app via its detail modal ("Remove from hub")
+- **Bulk delete** — select multiple apps in Select Mode and delete them together
+- **Delete by category** — delete all apps in a given category at once
+- **Delete all** — wipe the entire hub (requires typing "DELETE" to confirm)
+- **Select mode** — toggle a multi-select mode to pick multiple apps; confirmed selections shown with a checkmark badge
+
+## Organization & Navigation
+
+- **Category grouping** — apps automatically grouped by their tags (e.g. Productivity, Design, Dev Tools)
+- **Category filter** — click a tag pill in the toolbar to view only apps in that category
+- **Search** — real-time search by app name, filters the visible grid
+- **Keyboard shortcuts** — press `/` or `⌘K` (Mac) / `Ctrl+K` (Windows) to jump to search; `Escape` clears and blurs
+- **Search hint** — the search bar shows the correct shortcut hint based on the user's OS (Mac vs Windows)
+
+## App Details & Customization
+
+- **Custom URL** — override the default link for any app with a custom URL
+- **Notes** — add freeform notes to any app; displayed in the card tooltip on hover (amber italic text)
+- **App status** — set each app to Active, Trial, or Cancelled:
+  - Active: default, no badge
+  - Trial: violet "Trial" badge on the card
+  - Cancelled: card dimmed to 50% opacity with a gray "Cancelled" chip
+
+## Payment Tracking
+
+- **Payment type** — mark each app as Free or Paid
+- **Paid details** — enter amount, billing period (Monthly / Annual / Once), and optional billing date (day, and month for annual)
+- **Payment badge** — shown on the card for active paid/free apps; hidden for trial and cancelled
+- **Due date label** — shown on the card when a billing date is set
+- **Billing alerts** — pulsing orange dot on the card + orange due date text when payment is due within 7 days (active apps only; trial and cancelled excluded)
+- **Status-aware totals** — trial and cancelled apps are excluded from all spending stats
+- **Currency selector** — choose from 30+ currencies; amounts displayed consistently throughout
+
+## Billing Overview
+
+- **Stats bar** — shows total app count and spending summaries (monthly, annual, one-time) for active paid apps
+- **Billing overview modal** — click any spending chip in the stats bar to open a focused breakdown:
+  - `/mo` chip → Monthly subscriptions with per-app amounts and due dates
+  - `/yr` chip → Annual subscriptions with per-app amounts, due dates, and a monthly equivalent (~X/mo)
+  - One-time chip → One-time purchases with totals
+
+## Visuals & UX
+
+- **App cards** — each app shown as a card with its logo, name, payment badge, and status chip
+- **Hover tooltip** — hovering a card shows the app description, payment info, billing date, and notes (if any)
+- **Dark / light mode** — toggle between themes; preference saved across sessions
+- **Responsive layout** — works on mobile and desktop; grid adapts from 3 to 8 columns; header and search bar wrap on small screens
+
+## Data Portability
+
+- **Export** — download all app data (apps, URLs, payments, notes, statuses, currency) as a JSON file
+- **Import** — import a previously exported JSON file to restore or transfer your hub
+- **Share** — generate a read-only share link so others can view your app list (apps and URLs only, no private data)
+
+---
+
+*Last updated: 2026-06-27*

@@ -57,9 +57,9 @@ const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-function SunIcon() {
+function SunIcon({ size = 15 }: { size?: number }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="4"/>
       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
     </svg>
@@ -213,6 +213,21 @@ function PaymentBadge({ payment, currency, d }: { payment: Payment; currency: st
   );
 }
 
+function formatLastEdited(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en", { month: "short", day: "numeric", year: diffDays > 365 ? "numeric" : undefined });
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -236,6 +251,11 @@ export default function Home() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    setIsMac(/Macintosh|MacIntel/.test(navigator.userAgent));
+  }, []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalTag, setAddModalTag] = useState<string | null>(null);
   const [addModalSearch, setAddModalSearch] = useState("");
@@ -247,6 +267,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [billingView, setBillingView] = useState<"monthly" | "annually" | "once" | null>(null);
+  const [lastEdited, setLastEdited] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const savedList = localStorage.getItem("my-app-list");
@@ -261,6 +283,8 @@ export default function Home() {
     if (savedNotes) setNotes(JSON.parse(savedNotes));
     const savedStatuses = localStorage.getItem("app-statuses");
     if (savedStatuses) setStatuses(JSON.parse(savedStatuses));
+    const savedLastEdited = localStorage.getItem("app-last-edited");
+    if (savedLastEdited) setLastEdited(JSON.parse(savedLastEdited));
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
   }, []);
 
@@ -343,6 +367,7 @@ export default function Home() {
         payment: payments[app.name] ?? null,
         notes: notes[app.name] ?? null,
         status: statuses[app.name] ?? null,
+        lastEdited: lastEdited[app.name] ?? null,
       }));
     const blob = new Blob([JSON.stringify({ currency, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -366,6 +391,7 @@ export default function Home() {
         const newPayments: Payments = {};
         const newNotes: Record<string, string> = {};
         const newStatuses: Statuses = {};
+        const newLastEdited: Record<string, string> = {};
         for (const item of data) {
           const catalogApp = catalog.find((a) => a.name === item.name);
           if (!catalogApp) continue;
@@ -374,6 +400,7 @@ export default function Home() {
           if (item.payment) newPayments[item.name] = item.payment;
           if (item.notes) newNotes[item.name] = item.notes;
           if (item.status) newStatuses[item.name] = item.status;
+          if (item.lastEdited) newLastEdited[item.name] = item.lastEdited;
         }
         if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
         setMyAppNames(validNames);
@@ -381,11 +408,13 @@ export default function Home() {
         setPayments(newPayments);
         setNotes(newNotes);
         setStatuses(newStatuses);
+        setLastEdited(newLastEdited);
         localStorage.setItem("my-app-list", JSON.stringify(validNames));
         localStorage.setItem("custom-urls", JSON.stringify(newUrls));
         localStorage.setItem("app-payments", JSON.stringify(newPayments));
         localStorage.setItem("app-notes", JSON.stringify(newNotes));
         localStorage.setItem("app-statuses", JSON.stringify(newStatuses));
+        localStorage.setItem("app-last-edited", JSON.stringify(newLastEdited));
         showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
       } catch {
         showToast("Invalid file — import failed.");
@@ -408,11 +437,13 @@ export default function Home() {
       setPayments({});
       setNotes({});
       setStatuses({});
+      setLastEdited({});
       localStorage.setItem("my-app-list", JSON.stringify([]));
       localStorage.removeItem("custom-urls");
       localStorage.removeItem("app-payments");
       localStorage.removeItem("app-notes");
       localStorage.removeItem("app-statuses");
+      localStorage.removeItem("app-last-edited");
 
     } else if (deleteTarget.type === "category" && deleteTarget.tag) {
       const toRemove = new Set(
@@ -429,17 +460,20 @@ export default function Home() {
       const updatedPayments = { ...payments };
       const updatedNotes = { ...notes };
       const updatedStatuses = { ...statuses };
-      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; });
+      const updatedLastEdited = { ...lastEdited };
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; });
       setMyAppNames(updated);
       setCustomUrls(updatedUrls);
       setPayments(updatedPayments);
       setNotes(updatedNotes);
       setStatuses(updatedStatuses);
+      setLastEdited(updatedLastEdited);
       localStorage.setItem("my-app-list", JSON.stringify(updated));
       localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
       localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
       localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
       localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
+      localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
       setSelectedApps(new Set());
       setSelectMode(false);
     }
@@ -470,20 +504,24 @@ export default function Home() {
     const updatedPayments = { ...payments };
     const updatedNotes = { ...notes };
     const updatedStatuses = { ...statuses };
+    const updatedLastEdited = { ...lastEdited };
     delete updatedUrls[name];
     delete updatedPayments[name];
     delete updatedNotes[name];
     delete updatedStatuses[name];
+    delete updatedLastEdited[name];
     setMyAppNames(updated);
     setCustomUrls(updatedUrls);
     setPayments(updatedPayments);
     setNotes(updatedNotes);
     setStatuses(updatedStatuses);
+    setLastEdited(updatedLastEdited);
     localStorage.setItem("my-app-list", JSON.stringify(updated));
     localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
     localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
     localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
+    localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
     setEditing(null);
   }
 
@@ -536,6 +574,9 @@ export default function Home() {
     }
     setStatuses(updatedStatuses);
     localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
+    const updatedLastEdited = { ...lastEdited, [editing]: new Date().toISOString() };
+    setLastEdited(updatedLastEdited);
+    localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
     setEditing(null);
   }
 
@@ -565,11 +606,13 @@ export default function Home() {
 
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
-  // Stats
+  // Stats — only active apps count (trial = not paying yet, cancelled = no longer paying)
   let statsMonthly = 0;
   let statsAnnual = 0;
   let statsOnce = 0;
   for (const name of myAppNames) {
+    const st = statuses[name];
+    if (st === "trial" || st === "cancelled") continue;
     const pay = payments[name];
     if (!pay || pay.type !== "paid" || !pay.amount) continue;
     const amt = parseFloat(pay.amount);
@@ -592,9 +635,14 @@ export default function Home() {
 
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
-          <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Everything orbits here.</p>
+        <div className="flex items-center gap-3">
+          <div className="text-amber-500 flex-shrink-0">
+            <SunIcon size={28} />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
+            <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Everything orbits here.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => openDeleteModal("all")} title="Delete all apps"
@@ -639,19 +687,19 @@ export default function Home() {
             {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
           </span>
           {statsMonthly > 0 && (
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
+            <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
               {fmtCurrency(statsMonthly)}/mo
-            </span>
+            </button>
           )}
           {statsAnnual > 0 && (
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700"}`}>
+            <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
               {fmtCurrency(statsAnnual)}/yr
-            </span>
+            </button>
           )}
           {statsOnce > 0 && (
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+            <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
               {fmtCurrency(statsOnce)} one-time
-            </span>
+            </button>
           )}
           <div className="ml-auto relative">
             <select
@@ -683,7 +731,7 @@ export default function Home() {
             className={`pl-9 pr-16 py-2 rounded-xl text-sm outline-none border transition-colors w-full sm:w-52 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
           />
           <kbd className={`absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
-            <span>⌘</span><span>K</span>
+            {isMac ? <><span>⌘</span><span>K</span></> : <><span>Ctrl</span><span>K</span></>}
           </kbd>
         </div>
 
@@ -746,7 +794,7 @@ export default function Home() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
                   {myApps.filter((a) => a.tags.includes(tag)).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
-                      payment={payments[app.name]} currency={currency} d={d}
+                      payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]} d={d}
                       selectMode={selectMode} isSelected={selectedApps.has(app.name)}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
@@ -806,6 +854,9 @@ export default function Home() {
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-base">{editingApp.name}</div>
                 <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>{editingApp.brand}</div>
+                <div className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>
+                  {lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}
+                </div>
               </div>
               <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
                 className={`flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
@@ -842,7 +893,8 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Payment */}
+            {/* Payment — hidden for trial/cancelled (not relevant until active) */}
+            {statusDraft === "active" && (<>
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Payment</p>
             <div className="flex gap-2 mb-3">
               {(["free", "paid"] as const).map((t) => (
@@ -931,6 +983,7 @@ export default function Home() {
                 )}
               </div>
             )}
+            </>)}
 
             {/* Notes */}
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Notes</p>
@@ -1027,6 +1080,88 @@ export default function Home() {
         </div>
       )}
 
+      {/* Billing overview modal */}
+      {billingView !== null && (() => {
+        type BillingEntry = { app: App; payment: Payment; name: string };
+        const entries: BillingEntry[] = myAppNames
+          .filter((name) => {
+            const st = statuses[name];
+            return st !== "trial" && st !== "cancelled";
+          })
+          .map((name) => {
+            const app = catalog.find((a) => a.name === name);
+            const pay = payments[name];
+            if (!app || !pay || pay.type !== "paid" || !pay.amount || pay.period !== billingView) return null;
+            return { app, payment: pay, name };
+          })
+          .filter((x): x is BillingEntry => !!x);
+
+        const total = entries.reduce((s, x) => s + parseFloat(x.payment.amount!), 0);
+        const titles = { monthly: "Monthly", annually: "Annual", once: "One-time" };
+        const totalLabels = { monthly: `${fmtCurrency(total)}/mo`, annually: `${fmtCurrency(total)}/yr`, once: fmtCurrency(total) };
+
+        return (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setBillingView(null)}>
+            <div className={`rounded-2xl p-6 w-full max-w-sm shadow-2xl border max-h-[85vh] overflow-y-auto ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-bold text-lg">{titles[billingView]}</h2>
+                {entries.length > 0 && (
+                  <span className={`text-sm font-semibold ${d ? "text-gray-300" : "text-gray-700"}`}>{totalLabels[billingView]}</span>
+                )}
+              </div>
+              <p className={`text-xs mb-5 ${d ? "text-gray-500" : "text-gray-400"}`}>Active only · Trial &amp; cancelled excluded</p>
+
+              {entries.length === 0 ? (
+                <p className={`text-sm py-6 text-center ${d ? "text-gray-500" : "text-gray-400"}`}>No active paid apps in this category.</p>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-3">
+                    {entries.map(({ app, payment: pay, name }) => {
+                      const daysUntil = getDaysUntilDue(pay);
+                      const alert = daysUntil !== null && daysUntil <= 7;
+                      return (
+                        <div key={name} className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={app.icon} alt={app.name} className="w-7 h-7 rounded-lg flex-shrink-0" />
+                          <span className={`flex-1 text-sm ${d ? "text-gray-200" : "text-gray-800"}`}>{app.name}</span>
+                          <div className="text-right">
+                            <div className={`text-sm font-medium ${d ? "text-gray-200" : "text-gray-800"}`}>{fmtCurrency(parseFloat(pay.amount!))}</div>
+                            {paymentDueLabel(pay) && (
+                              <div className={`text-[11px] ${alert ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
+                                {alert ? (daysUntil === 0 ? "Due today!" : `Due in ${daysUntil}d`) : paymentDueLabel(pay)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {billingView === "annually" && total > 0 && (
+                    <div className={`rounded-xl px-4 py-3 mt-4 ${d ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-semibold ${d ? "text-amber-400" : "text-amber-700"}`}>Monthly equivalent</span>
+                        <span className={`text-base font-bold ${d ? "text-amber-400" : "text-amber-700"}`}>
+                          ~{fmtCurrency(total / 12)}<span className="text-xs font-normal">/mo</span>
+                        </span>
+                      </div>
+                      <p className={`text-[11px] mt-1 ${d ? "text-amber-500/70" : "text-amber-600/70"}`}>
+                        Annual total averaged across 12 months
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <button onClick={() => setBillingView(null)}
+                className={`mt-4 w-full text-xs py-2 rounded-xl transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                Close
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Add app modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowAddModal(false)}>
@@ -1107,7 +1242,7 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
   onOpen: () => void; onToggleSelect: () => void;
 }) {
   const daysUntilDue = payment ? getDaysUntilDue(payment) : null;
-  const dueSoon = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7 && status !== "cancelled";
+  const dueSoon = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7 && status !== "cancelled" && status !== "trial";
   const isCancelled = status === "cancelled";
   const isTrial = status === "trial";
 
@@ -1115,11 +1250,12 @@ function AppCard({ app, url, payment, currency, notes, status, d, selectMode, is
     ? daysUntilDue === 0 ? "Due today!" : `Due in ${daysUntilDue}d`
     : null;
 
+  const showPaymentInfo = status !== "trial" && status !== "cancelled";
   const tooltipMeta = [
     app.brand,
-    payment ? paymentLabel(payment, currency) : null,
-    payment ? paymentDueLabel(payment) : null,
-    dueSoonLabel,
+    showPaymentInfo && payment ? paymentLabel(payment, currency) : null,
+    showPaymentInfo && payment ? paymentDueLabel(payment) : null,
+    showPaymentInfo ? dueSoonLabel : null,
   ]
     .filter(Boolean)
     .join(" · ");

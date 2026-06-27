@@ -1,16 +1,8 @@
 Last time edited (per app)
 app.ts file
 how does the save function (cookie?)
-notes not showing in tooltip
-
-
-Notes on hover — notes appear in the tooltip in amber italic text, separated by a thin dividing line from the rest of the meta. The amber color makes it visually distinct from the gray description and payment info.
-
-App status — Active / Trial / Cancelled selector in the modal, right above Payment. No badge shown for Active (it's the default). Trial shows a violet "Trial" badge on the card. Cancelled dims the whole card to 50% opacity and shows a gray "Cancelled" chip. The payment badge hides on Trial/Cancelled since the status tells the story.
-
-Billing alerts — a small pulsing orange dot appears in the top-left of a card when payment is due within 7 days. The due date text on the card also turns orange. The tooltip adds "Due in 3d" or "Due today!" to the meta line. Cancelled apps never show the alert.
-
-Keyboard shortcut — press / or ⌘K from anywhere on the page to jump to search. Escape clears and blurs it. A subtle ⌘K hint shows inside the search bar on desktop (hidden on mobile where it doesn't apply).
+What's a good way to have a logo with AI?
+Type of payments
 
 Feature suggestions
 
@@ -40,3 +32,5 @@ Generate an .ics file from all billing datesndar / Google Calendar as recurringr
 8. Cost breakdown view
 A dedicated panel or slide-out that shows: tost per category ranked, and free vs paidratio. You have all the data already — it's just a different presentation of what's in the stats bar.                 
 The ones I'd prioritize first: billing alerts (highest impact, zero new data needed), app status (natural extension of the payment system), and keyboard shortcut (aily use).
+
+Recommended agents or skills and mcps.

@@ -30,3 +30,7 @@ A personal **App Hub / App Directory** — a single web page that lists every ap
 ## File location rule
 All project notes, design docs, and memory files must be created **inside this project folder** so they are tracked by Git and synced via GitHub.
 Never save project context to `~/.claude/` — those files are local only and won't sync.
+
+## Feature tracking rule
+Whenever a new feature is implemented, add it to `FEATURES.md` in the correct section before ending the task.
+This keeps the feature list accurate and makes it easy to present or audit the app at any time.
