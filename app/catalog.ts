@@ -10,6 +10,14 @@ export type App = {
 const catalog: App[] = [
   // AI
   {
+    name: "Botpress",
+    url: "https://botpress.com",
+    icon: "https://www.google.com/s2/favicons?domain=botpress.com&sz=64",
+    tags: ["AI"],
+    description: "Open-source platform for building, deploying, and managing AI chatbots and autonomous agents.",
+    brand: "Botpress",
+  },
+  {
     name: "Claude",
     url: "https://claude.ai",
     icon: "https://www.google.com/s2/favicons?domain=claude.ai&sz=64",
@@ -83,6 +91,14 @@ const catalog: App[] = [
     brand: "Phantombuster",
   },
   // Dev
+  {
+    name: "WordPress",
+    url: "https://wordpress.com",
+    icon: "https://www.google.com/s2/favicons?domain=wordpress.com&sz=64",
+    tags: ["Dev"],
+    description: "Open-source CMS powering 40% of the web — build and manage websites, blogs, and online stores with thousands of plugins and themes.",
+    brand: "WordPress",
+  },
   {
     name: "GitHub",
     url: "https://github.com",
@@ -162,6 +178,38 @@ const catalog: App[] = [
     tags: ["Dev"],
     description: "Multi-account browser for managing separate profiles with unique fingerprints.",
     brand: "Multilogin",
+  },
+  {
+    name: "Bolt",
+    url: "https://bolt.new",
+    icon: "https://www.google.com/s2/favicons?domain=bolt.new&sz=64",
+    tags: ["Dev"],
+    description: "AI-powered full-stack web development environment that generates, runs, and deploys apps from a prompt.",
+    brand: "StackBlitz",
+  },
+  {
+    name: "Pinecone",
+    url: "https://pinecone.io",
+    icon: "https://www.google.com/s2/favicons?domain=pinecone.io&sz=64",
+    tags: ["Dev"],
+    description: "Managed vector database for building AI applications with semantic search and similarity matching at scale.",
+    brand: "Pinecone",
+  },
+  {
+    name: "Rider",
+    url: "https://rider.jetbrains.com",
+    icon: "https://www.google.com/s2/favicons?domain=rider.jetbrains.com&sz=64",
+    tags: ["Dev"],
+    description: "Cross-platform .NET and game development IDE with deep C#, Unity, and Unreal Engine support.",
+    brand: "JetBrains",
+  },
+  {
+    name: "Webhook.site",
+    url: "https://webhook.site",
+    icon: "https://www.google.com/s2/favicons?domain=webhook.site&sz=64",
+    tags: ["Dev"],
+    description: "Instant webhook and HTTP request inspector for testing, debugging, and automating integrations.",
+    brand: "Webhook.site",
   },
   {
     name: "21st.dev",
@@ -268,7 +316,63 @@ const catalog: App[] = [
     description: "Curated gallery of the best web design references and inspirations.",
     brand: "Godly",
   },
+  {
+    name: "OBS Studio",
+    url: "https://obsproject.com",
+    icon: "https://www.google.com/s2/favicons?domain=obsproject.com&sz=64",
+    tags: ["Design"],
+    description: "Free and open-source software for video recording and live streaming with scene composition, audio mixing, and real-time encoding.",
+    brand: "OBS Project",
+  },
   // Marketing
+  {
+    name: "Shopify",
+    url: "https://shopify.com",
+    icon: "https://www.google.com/s2/favicons?domain=shopify.com&sz=64",
+    tags: ["Marketing"],
+    description: "All-in-one commerce platform to build, launch, and scale online stores with payments, shipping, and analytics built in.",
+    brand: "Shopify",
+  },
+  {
+    name: "ClickFunnels",
+    url: "https://clickfunnels.com",
+    icon: "https://www.google.com/s2/favicons?domain=clickfunnels.com&sz=64",
+    tags: ["Marketing"],
+    description: "Sales funnel and landing page builder for capturing leads and converting them into customers.",
+    brand: "ClickFunnels",
+  },
+  {
+    name: "Leadmagic",
+    url: "https://leadmagic.com",
+    icon: "https://www.google.com/s2/favicons?domain=leadmagic.com&sz=64",
+    tags: ["Marketing"],
+    description: "B2B data enrichment tool for finding verified email addresses and company data from LinkedIn profiles.",
+    brand: "Leadmagic",
+  },
+  {
+    name: "Leadsie",
+    url: "https://leadsie.com",
+    icon: "https://www.google.com/s2/favicons?domain=leadsie.com&sz=64",
+    tags: ["Marketing"],
+    description: "Link-based tool that lets agencies collect client access to Facebook, Instagram, and Google Ads accounts.",
+    brand: "Leadsie",
+  },
+  {
+    name: "Skool",
+    url: "https://skool.com",
+    icon: "https://www.google.com/s2/favicons?domain=skool.com&sz=64",
+    tags: ["Marketing"],
+    description: "Community and online course platform for creators to build and monetize their audience.",
+    brand: "Skool",
+  },
+  {
+    name: "Tardigrada",
+    url: "https://tardigrada.io",
+    icon: "https://www.google.com/s2/favicons?domain=tardigrada.io&sz=64",
+    tags: ["Dev"],
+    description: "Real US phone numbers on demand — carrier-backed SIM numbers (not VoIP) that receive SMS and pass verification checks that virtual numbers fail. REST API + webhooks.",
+    brand: "Tardigrada",
+  },
   {
     name: "Instantly",
     url: "https://instantly.ai",
@@ -375,6 +479,14 @@ const catalog: App[] = [
     brand: "Harvest",
   },
   {
+    name: "Presentify",
+    url: "https://presentify.app",
+    icon: "https://www.google.com/s2/favicons?domain=presentify.app&sz=64",
+    tags: ["Productivity"],
+    description: "Mac app for annotating your screen during live presentations, calls, and screen recordings.",
+    brand: "Presentify",
+  },
+  {
     name: "Auphoric",
     url: "https://auphoric.com",
     icon: "https://www.google.com/s2/favicons?domain=auphoric.com&sz=64",
@@ -473,6 +585,14 @@ const catalog: App[] = [
     brand: "ByteDance",
   },
   {
+    name: "Tinder",
+    url: "https://tinder.com",
+    icon: "https://www.google.com/s2/favicons?domain=tinder.com&sz=64",
+    tags: ["Social"],
+    description: "Dating app for swiping, matching, and connecting with people nearby.",
+    brand: "Match Group",
+  },
+  {
     name: "WhatsApp",
     url: "https://whatsapp.com",
     icon: "https://www.google.com/s2/favicons?domain=whatsapp.com&sz=64",
@@ -532,6 +652,14 @@ const catalog: App[] = [
   },
   // Shopping
   {
+    name: "Carrefour",
+    url: "https://carrefour.fr",
+    icon: "https://www.google.com/s2/favicons?domain=carrefour.fr&sz=64",
+    tags: ["Shopping"],
+    description: "One of Europe's largest retail chains offering groceries, electronics, and household goods online and in-store.",
+    brand: "Carrefour",
+  },
+  {
     name: "Amazon",
     url: "https://amazon.com",
     icon: "https://www.google.com/s2/favicons?domain=amazon.com&sz=64",
@@ -539,14 +667,56 @@ const catalog: App[] = [
     description: "Online marketplace for shopping, streaming, and cloud services.",
     brand: "Amazon",
   },
-  // Gaming
+  // Learning
+  {
+    name: "Baselang",
+    url: "https://baselang.com",
+    icon: "https://www.google.com/s2/favicons?domain=baselang.com&sz=64",
+    tags: ["Learning"],
+    description: "Subscription language learning service with unlimited 1-on-1 tutoring sessions for immersive language acquisition.",
+    brand: "Baselang",
+  },
+  {
+    name: "italki",
+    url: "https://italki.com",
+    icon: "https://www.google.com/s2/favicons?domain=italki.com&sz=64",
+    tags: ["Learning"],
+    description: "Online language learning marketplace to book lessons with professional teachers and community tutors worldwide.",
+    brand: "italki",
+  },
+  // Game Dev
+  {
+    name: "Godot",
+    url: "https://godotengine.org",
+    icon: "https://www.google.com/s2/favicons?domain=godotengine.org&sz=64",
+    tags: ["Game Dev"],
+    description: "Free and open-source game engine for 2D and 3D games with its own scripting language (GDScript) and C# support.",
+    brand: "Godot Engine",
+  },
+  {
+    name: "Unreal Engine",
+    url: "https://unrealengine.com",
+    icon: "https://www.google.com/s2/favicons?domain=unrealengine.com&sz=64",
+    tags: ["Game Dev"],
+    description: "High-fidelity 3D game engine by Epic Games, used in AAA game development, film, and real-time visualization.",
+    brand: "Epic Games",
+  },
   {
     name: "Unity",
     url: "https://unity.com",
     icon: "https://www.google.com/s2/favicons?domain=unity.com&sz=64",
-    tags: ["Dev", "Gaming"],
+    tags: ["Game Dev"],
     description: "Cross-platform game engine for creating 2D and 3D games, AR/VR applications, and interactive experiences.",
     brand: "Unity Technologies",
+  },
+  // Gaming
+  {
+    name: "Steam",
+    url: "https://store.steampowered.com",
+    icon: "https://www.google.com/s2/favicons?domain=steampowered.com&sz=64",
+    tags: ["Gaming"],
+    description: "The world's largest PC gaming platform — buy, download, and launch games with cloud saves and community features.",
+    brand: "Valve",
   },
   {
     name: "DeSmuME",
@@ -555,6 +725,32 @@ const catalog: App[] = [
     tags: ["Gaming"],
     description: "Open-source Nintendo DS emulator for playing DS games on desktop.",
     brand: "DeSmuME",
+  },
+  // Food
+  {
+    name: "Uber Eats",
+    url: "https://ubereats.com",
+    icon: "https://www.google.com/s2/favicons?domain=ubereats.com&sz=64",
+    tags: ["Food"],
+    description: "Food delivery platform connecting you with local restaurants and grocery stores for on-demand delivery or pickup.",
+    brand: "Uber",
+  },
+  {
+    name: "Deliveroo",
+    url: "https://deliveroo.fr",
+    icon: "https://www.google.com/s2/favicons?domain=deliveroo.fr&sz=64",
+    tags: ["Food"],
+    description: "Food delivery service partnering with local restaurants and grocers for fast, trackable delivery to your door.",
+    brand: "Deliveroo",
+  },
+  // Travel
+  {
+    name: "ADA",
+    url: "https://ada.fr",
+    icon: "https://www.google.com/s2/favicons?domain=ada.fr&sz=64",
+    tags: ["Travel"],
+    description: "French car rental network with 350+ agencies across France offering short and long-term vehicle hire at competitive rates.",
+    brand: "ADA",
   },
 ];
 

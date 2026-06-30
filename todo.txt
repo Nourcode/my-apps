@@ -1,6 +1,6 @@
 
 Feature suggestions
 
-Add a list of emails that we can attach to an app then use those as filter. 
+New apps to add: OBS (recording), ADA (car renting in France), Uber eats, deliveroo, carrefour (it's french), Shopify, Wordpress
 
 Recommended agents or skills and mcps.

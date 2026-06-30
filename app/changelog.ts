@@ -14,6 +14,132 @@ export type Version = {
 
 const changelog: Version[] = [
   {
+    version: "2026.06.30.1",
+    date: "2026-06-30",
+    label: "Catalog Expansion",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "7 new apps: OBS Studio (Design), WordPress and Shopify (Dev / Marketing), Carrefour (Shopping), Uber Eats and Deliveroo (new Food category), ADA (new Travel category)",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.06.30",
+    date: "2026-06-30",
+    label: "Settings Drawer",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Settings drawer — a slide-in panel (gear icon in the header) consolidates secondary actions: Export JSON, Import JSON, Calendar export, Email Accounts, Currency, and Delete all apps",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Header trimmed from 10 interactive elements to 4 — only Search, Select, Share, and Theme toggle remain visible at a glance",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.06.29.3",
+    date: "2026-06-29",
+    label: "Email Manager, Search in Header & Layout Polish",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Email Accounts manager — dedicated window (envelope icon in header) to add and remove your emails; assign one to each app from its detail modal",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Search bar moved into the header — always visible regardless of how many apps you have",
+          "Add App button moved above the filter chips for a clearer hierarchy",
+          "Per-category Add card now matches the full height of app cards",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.06.29.2",
+    date: "2026-06-29",
+    label: "Email List, Platform Chips & Catalog",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Email address book — add your emails once, then assign one per app; filter by email in the toolbar",
+          "6 new apps: Baselang, italki (new Learning category), Tinder (Social), Steam (Gaming), Godot, Unreal Engine (Game Dev)",
+          "Tardigrada corrected — real US phone numbers on demand (carrier-backed SIM, SMS inbound, REST API)",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Desktop platform chip now shows on all cards (was hidden before); 'Both' renamed to 'Desktop and Mobile' throughout",
+          "Platform filter chip labels updated: Desktop / Mobile / Desktop and Mobile",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.06.29.1",
+    date: "2026-06-29",
+    label: "Header, Card Layout & Catalog Refinements",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "8 new apps: Baselang and italki (new Learning category), Tinder (Social), Steam (Gaming), Godot and Unreal Engine (Game Dev), plus Tardigrada moved to Dev with corrected description (real US phone numbers on demand)",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Header now has a full-width separator line distinguishing it from page content",
+          "App card chips (Personal, Paid, Mastercard, Mobile…) now flow in a compact flex-wrap row instead of stacking one per line",
+          "Payment method chip is now in the chip cluster on the card, matching the style of all other tags",
+          "App cards are taller (176px min) to comfortably fit multiple chips",
+          "Sun icon in a rounded amber container; title larger; version chip moved alongside subtitle",
+          "'Game Dev' category for game engines (Unity, Unreal Engine, Godot); 'Gaming' reserved for game players (Steam, DeSmuME)",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.06.29",
+    date: "2026-06-29",
+    label: "Platform Tags, Payment Method Chip & Catalog",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Platform tag per app — mark apps as Desktop (default), Mobile, or Both; Mobile and Both show a colored chip on the card; filter by platform in the toolbar",
+          "11 new apps: Bolt, Pinecone, Rider, Webhook.site (Dev), ClickFunnels, Leadmagic, Leadsie, Skool, Tardigrada (Marketing), Presentify (Productivity), Botpress (AI)",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Payment method label on app cards is now a styled chip instead of plain text",
+          "Unity moved to Gaming only (was also listed under Dev — caused an empty section)",
+        ],
+      },
+      {
+        category: "Fixed",
+        items: [
+          "Empty category sections no longer appear when a multi-tag app's secondary tag has no other apps",
+        ],
+      },
+    ],
+  },
+  {
     version: "2026.06.27.3",
     date: "2026-06-27",
     label: "Account Email, Calendar Export & Catalog",

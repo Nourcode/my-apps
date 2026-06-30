@@ -18,6 +18,7 @@ A running record of every feature implemented in the app. Update this file whene
 
 - **Pinned apps** — star any app in its detail modal to pin it; pinned apps appear in a dedicated "Pinned" row above all categories with an amber pin badge; pin state persists in localStorage and exports/imports with your hub data
 - **Personal / Business tagging** — mark any app as Personal (default) or Business via the Use selector in its detail modal; Business apps show an indigo "Business" chip on their card and in the tooltip; filter the hub by Personal or Business using toolbar chips (visible once at least one app is set to Business)
+- **Platform tagging** — mark any app as Desktop (default), Mobile, or Both via the Platform selector in its detail modal; Mobile apps show a violet "Mobile" chip, Both apps show a teal "Mobile + Desktop" chip; filter by platform in the toolbar (chips appear once at least one app is set to Mobile or Both)
 - **Category grouping** — apps automatically grouped by their tags (e.g. Productivity, Design, Dev Tools); multi-tag apps appear only once (under their first tag) to avoid duplication
 - **Category filter** — click a tag pill in the toolbar to view only apps in that category
 - **Search** — real-time search by app name, filters the visible grid
@@ -68,6 +69,14 @@ A running record of every feature implemented in the app. Update this file whene
   - `/yr` chip → Annual subscriptions with per-app amounts, due dates, and a monthly equivalent (~X/mo)
   - One-time chip → One-time purchases with totals
 
+## Settings Drawer
+
+- **Settings drawer** — click the gear icon in the header to open a slide-in panel from the right; consolidates secondary/infrequent actions so the header stays uncluttered
+  - **Sharing & Data** — Export JSON, Import JSON, Calendar export (.ics)
+  - **Account** — Email Accounts manager, Currency picker (shows active code as a badge)
+  - **Danger** — Delete all apps (requires "DELETE" confirmation)
+- Header reduced from 10 interactive elements to 4: Search, Select mode, Share, Theme toggle, and the gear trigger
+
 ## Versioning & Changelog
 
 - **Version badge** — current version shown as a small chip next to the subtitle in the header; click to open the changelog
@@ -89,4 +98,4 @@ A running record of every feature implemented in the app. Update this file whene
 
 ---
 
-*Last updated: 2026-06-27*
+*Last updated: 2026-06-29*

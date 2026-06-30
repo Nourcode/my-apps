@@ -36,6 +36,7 @@ type AppStatus = "active" | "trial" | "cancelled";
 type Statuses = Record<string, AppStatus>;
 type AppUse = "personal" | "business";
 type AppUses = Record<string, AppUse>;
+type AppPlatform = "desktop" | "mobile" | "both";
 type DeleteTarget = { type: "all" | "category" | "selected"; tag?: string };
 
 const CURRENCIES = [
@@ -167,6 +168,34 @@ function CalendarIcon() {
   );
 }
 
+function EnvelopeIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    </svg>
+  );
+}
+
+function BanknoteIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="12" rx="2"/>
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
 function ExternalLinkIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -292,15 +321,22 @@ export default function Home() {
   const [bankDraft, setBankDraft] = useState("");
   const [showBankPicker, setShowBankPicker] = useState(false);
   const [bankSearch, setBankSearch] = useState("");
+  const [showEmailPicker, setShowEmailPicker] = useState(false);
   const [activeBank, setActiveBank] = useState<string | null>(null);
   const [activePayMethod, setActivePayMethod] = useState<PaymentMethod | null>(null);
   const [uses, setUses] = useState<AppUses>({});
   const [useDraft, setUseDraft] = useState<AppUse>("personal");
   const [activeUse, setActiveUse] = useState<AppUse | null>(null);
+  const [platforms, setPlatforms] = useState<Record<string, AppPlatform>>({});
+  const [platformDraft, setPlatformDraft] = useState<AppPlatform>("desktop");
+  const [activePlatform, setActivePlatform] = useState<AppPlatform | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [notesDraft, setNotesDraft] = useState("");
   const [emails, setEmails] = useState<Record<string, string>>({});
   const [emailDraft, setEmailDraft] = useState("");
+  const [emailList, setEmailList] = useState<string[]>([]);
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [activeEmailFilter, setActiveEmailFilter] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<Statuses>({});
   const [statusDraft, setStatusDraft] = useState<AppStatus>("active");
   const [selectMode, setSelectMode] = useState(false);
@@ -326,6 +362,12 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
   const [billingView, setBillingView] = useState<"monthly" | "annually" | "once" | null>(null);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showEmailManager, setShowEmailManager] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState("");
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [addSearch, setAddSearch] = useState("");
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [lastEdited, setLastEdited] = useState<Record<string, string>>({});
   const [pinnedApps, setPinnedApps] = useState<Set<string>>(new Set());
 
@@ -352,6 +394,10 @@ export default function Home() {
     if (savedUses) setUses(JSON.parse(savedUses));
     const savedEmails = localStorage.getItem("app-emails");
     if (savedEmails) setEmails(JSON.parse(savedEmails));
+    const savedEmailList = localStorage.getItem("app-email-list");
+    if (savedEmailList) setEmailList(JSON.parse(savedEmailList));
+    const savedPlatforms = localStorage.getItem("app-platforms");
+    if (savedPlatforms) setPlatforms(JSON.parse(savedPlatforms));
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
   }, []);
 
@@ -439,8 +485,9 @@ export default function Home() {
         pinned: pinnedApps.has(app.name),
         use: uses[app.name] ?? "personal",
         email: emails[app.name] ?? null,
+        platform: platforms[app.name] ?? "desktop",
       }));
-    const blob = new Blob([JSON.stringify({ currency, apps: myApps }, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ currency, emailList, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -534,6 +581,7 @@ export default function Home() {
         const newPinned = new Set<string>();
         const newUsesImp: AppUses = {};
         const newEmailsImp: Record<string, string> = {};
+        const newPlatformsImp: Record<string, AppPlatform> = {};
         for (const item of data) {
           const catalogApp = catalog.find((a) => a.name === item.name);
           if (!catalogApp) continue;
@@ -547,8 +595,13 @@ export default function Home() {
           if (item.pinned) newPinned.add(item.name);
           if (item.use === "business") newUsesImp[item.name] = "business";
           if (item.email) newEmailsImp[item.name] = item.email;
+          if (item.platform === "mobile" || item.platform === "both") newPlatformsImp[item.name] = item.platform;
         }
         if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
+        if (!Array.isArray(raw) && Array.isArray(raw.emailList)) {
+          setEmailList(raw.emailList);
+          localStorage.setItem("app-email-list", JSON.stringify(raw.emailList));
+        }
         setMyAppNames(validNames);
         setCustomUrls(newUrls);
         setPayments(newPayments);
@@ -559,6 +612,7 @@ export default function Home() {
         setPinnedApps(newPinned);
         setUses(newUsesImp);
         setEmails(newEmailsImp);
+        setPlatforms(newPlatformsImp);
         localStorage.setItem("my-app-list", JSON.stringify(validNames));
         localStorage.setItem("custom-urls", JSON.stringify(newUrls));
         localStorage.setItem("app-payments", JSON.stringify(newPayments));
@@ -569,6 +623,7 @@ export default function Home() {
         localStorage.setItem("app-pinned", JSON.stringify([...newPinned]));
         localStorage.setItem("app-uses", JSON.stringify(newUsesImp));
         localStorage.setItem("app-emails", JSON.stringify(newEmailsImp));
+        localStorage.setItem("app-platforms", JSON.stringify(newPlatformsImp));
         showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
       } catch {
         showToast("Invalid file — import failed.");
@@ -596,6 +651,7 @@ export default function Home() {
       setPinnedApps(new Set());
       setUses({});
       setEmails({});
+      setPlatforms({});
       localStorage.setItem("my-app-list", JSON.stringify([]));
       localStorage.removeItem("custom-urls");
       localStorage.removeItem("app-payments");
@@ -606,6 +662,7 @@ export default function Home() {
       localStorage.removeItem("app-pinned");
       localStorage.removeItem("app-uses");
       localStorage.removeItem("app-emails");
+      localStorage.removeItem("app-platforms");
 
     } else if (deleteTarget.type === "category" && deleteTarget.tag) {
       const toRemove = new Set(
@@ -627,7 +684,8 @@ export default function Home() {
       const updatedPinnedSel = new Set(pinnedApps);
       const updatedUsesSel = { ...uses };
       const updatedEmailsSel = { ...emails };
-      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; });
+      const updatedPlatformsSel = { ...platforms };
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; delete updatedPlatformsSel[n]; });
       setMyAppNames(updated);
       setCustomUrls(updatedUrls);
       setPayments(updatedPayments);
@@ -638,6 +696,7 @@ export default function Home() {
       setPinnedApps(updatedPinnedSel);
       setUses(updatedUsesSel);
       setEmails(updatedEmailsSel);
+      setPlatforms(updatedPlatformsSel);
       localStorage.setItem("my-app-list", JSON.stringify(updated));
       localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
       localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
@@ -648,6 +707,7 @@ export default function Home() {
       localStorage.setItem("app-pinned", JSON.stringify([...updatedPinnedSel]));
       localStorage.setItem("app-uses", JSON.stringify(updatedUsesSel));
       localStorage.setItem("app-emails", JSON.stringify(updatedEmailsSel));
+      localStorage.setItem("app-platforms", JSON.stringify(updatedPlatformsSel));
       setSelectedApps(new Set());
       setSelectMode(false);
     }
@@ -692,6 +752,8 @@ export default function Home() {
     delete updatedUsesDel[name];
     const updatedEmailsDel = { ...emails };
     delete updatedEmailsDel[name];
+    const updatedPlatformsDel = { ...platforms };
+    delete updatedPlatformsDel[name];
     setMyAppNames(updated);
     setCustomUrls(updatedUrls);
     setPayments(updatedPayments);
@@ -702,6 +764,7 @@ export default function Home() {
     setPinnedApps(updatedPinned);
     setUses(updatedUsesDel);
     setEmails(updatedEmailsDel);
+    setPlatforms(updatedPlatformsDel);
     localStorage.setItem("my-app-list", JSON.stringify(updated));
     localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
@@ -712,6 +775,7 @@ export default function Home() {
     localStorage.setItem("app-pinned", JSON.stringify([...updatedPinned]));
     localStorage.setItem("app-uses", JSON.stringify(updatedUsesDel));
     localStorage.setItem("app-emails", JSON.stringify(updatedEmailsDel));
+    localStorage.setItem("app-platforms", JSON.stringify(updatedPlatformsDel));
     setEditing(null);
   }
 
@@ -728,10 +792,32 @@ export default function Home() {
     setBankDraft(bankAssignments[name] ?? "");
     setShowBankPicker(false);
     setBankSearch("");
+    setShowEmailPicker(false);
     setNotesDraft(notes[name] ?? "");
     setEmailDraft(emails[name] ?? "");
     setStatusDraft(statuses[name] ?? "active");
     setUseDraft(uses[name] ?? "personal");
+    setPlatformDraft(platforms[name] ?? "desktop");
+    setNewEmailInput("");
+  }
+
+  function addEmailToList() {
+    const trimmed = newEmailInput.trim();
+    if (!trimmed || emailList.includes(trimmed)) { setNewEmailInput(""); return; }
+    const updated = [...emailList, trimmed];
+    setEmailList(updated);
+    localStorage.setItem("app-email-list", JSON.stringify(updated));
+    setNewEmailInput("");
+  }
+
+  function removeEmailFromList(email: string) {
+    const updated = emailList.filter((e) => e !== email);
+    setEmailList(updated);
+    localStorage.setItem("app-email-list", JSON.stringify(updated));
+    const updatedEmails = Object.fromEntries(Object.entries(emails).filter(([, v]) => v !== email));
+    setEmails(updatedEmails);
+    localStorage.setItem("app-emails", JSON.stringify(updatedEmails));
+    if (emailDraft === email) setEmailDraft("");
   }
 
   function togglePin(name: string) {
@@ -805,6 +891,14 @@ export default function Home() {
     }
     setUses(updatedUses);
     localStorage.setItem("app-uses", JSON.stringify(updatedUses));
+    const updatedPlatforms = { ...platforms };
+    if (platformDraft === "desktop") {
+      delete updatedPlatforms[editing];
+    } else {
+      updatedPlatforms[editing] = platformDraft;
+    }
+    setPlatforms(updatedPlatforms);
+    localStorage.setItem("app-platforms", JSON.stringify(updatedPlatforms));
     setEditing(null);
   }
 
@@ -819,11 +913,15 @@ export default function Home() {
     .filter((app) => !activeBank || bankAssignments[app.name] === activeBank)
     .filter((app) => !activePayMethod || payments[app.name]?.method === activePayMethod)
     .filter((app) => !activeUse || (uses[app.name] ?? "personal") === activeUse)
+    .filter((app) => !activePlatform || (platforms[app.name] ?? "desktop") === activePlatform)
+    .filter((app) => !activeEmailFilter || emails[app.name] === activeEmailFilter)
     .filter((app) => app.name.toLowerCase().includes(search.toLowerCase()));
   const hasBusinessApp = myAppNames.some((n) => uses[n] === "business");
+  const hasNonDesktopApp = myAppNames.some((n) => platforms[n] === "mobile" || platforms[n] === "both");
 
   const usedBanks = Array.from(new Set(myAppNames.map((n) => bankAssignments[n]).filter(Boolean))).sort() as string[];
   const usedPayMethods = Array.from(new Set(myAppNames.map((n) => payments[n]?.method).filter((m): m is PaymentMethod => !!m))).sort();
+  const usedEmailFilters = Array.from(new Set(myAppNames.map((n) => emails[n]).filter(Boolean))).sort() as string[];
 
   // Each app is shown only once in the category grid — under its first matching tag.
   // Multi-tag apps (e.g. Unity: Dev + Gaming) are still discoverable via the filter chips.
@@ -846,6 +944,22 @@ export default function Home() {
           || a.tags.some((t) => t.toLowerCase().includes(q));
       })
     : addModalBaseApps;
+
+  const addDropdownApps = addSearch.trim()
+    ? catalog
+        .filter((a) =>
+          a.name.toLowerCase().includes(addSearch.toLowerCase()) ||
+          a.brand.toLowerCase().includes(addSearch.toLowerCase()) ||
+          a.tags.some((t) => t.toLowerCase().includes(addSearch.toLowerCase()))
+        )
+        .sort((a, b) => {
+          const aAdded = myAppNames.includes(a.name);
+          const bAdded = myAppNames.includes(b.name);
+          if (aAdded !== bAdded) return aAdded ? 1 : -1;
+          return a.name.localeCompare(b.name);
+        })
+        .slice(0, 8)
+    : [];
 
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
@@ -874,50 +988,85 @@ export default function Home() {
   const selectCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors appearance-none ${d ? "bg-white/5 border-white/10 text-white focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 focus:border-black/20"}`;
 
   return (
-    <main className={`min-h-screen px-4 sm:px-10 py-8 sm:py-12 transition-colors duration-200 ${selectMode ? "pb-28" : ""} ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
+    <main className={`min-h-screen px-4 sm:px-10 pt-0 pb-8 sm:pb-12 transition-colors duration-200 ${selectMode ? "pb-28" : ""} ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="text-amber-500 flex-shrink-0">
-            <SunIcon size={28} />
+      <div className={`-mx-4 sm:-mx-10 px-4 sm:px-10 py-3 mb-6 border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-amber-500 ${d ? "bg-amber-500/10" : "bg-amber-50"}`}>
+            <SunIcon size={15} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Helio</h1>
-              <button onClick={() => setShowChangelog(true)}
-                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors self-center ${d ? "bg-white/8 text-gray-500 hover:bg-white/12 hover:text-gray-300" : "bg-black/[0.06] text-gray-400 hover:bg-black/10 hover:text-gray-600"}`}>
-                {changelog[0].version}
-              </button>
-            </div>
-            <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Everything orbits here.</p>
-          </div>
+          <span className={`text-sm font-medium ${d ? "text-gray-300" : "text-gray-700"}`}>testuser</span>
+          <button onClick={() => setShowChangelog(true)}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-colors ${d ? "bg-white/8 text-gray-500 hover:bg-white/12 hover:text-gray-300" : "bg-black/[0.06] text-gray-400 hover:bg-black/10 hover:text-gray-600"}`}>
+            {changelog[0].version}
+          </button>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => openDeleteModal("all")} title="Delete all apps"
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-500 hover:bg-red-500/20 hover:text-red-400" : "bg-black/[0.06] text-gray-400 hover:bg-red-50 hover:text-red-500"}`}>
-            <TrashIcon />
-          </button>
-          <button onClick={() => { exitSelectMode(); setSelectMode(true); }} title="Select apps"
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${selectMode ? "bg-amber-500 text-white" : d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
-            <CheckSquareIcon />
-          </button>
+        <div className="flex items-center gap-2">
+          {/* Add app autocomplete search */}
+          <div className="relative">
+            <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Add an app…"
+              value={addSearch}
+              onChange={(e) => setAddSearch(e.target.value)}
+              onFocus={() => setShowAddDropdown(true)}
+              onBlur={() => setTimeout(() => setShowAddDropdown(false), 150)}
+              onKeyDown={(e) => e.key === "Escape" && (setAddSearch(""), setShowAddDropdown(false), (e.target as HTMLInputElement).blur())}
+              className={`pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none border transition-colors w-72 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+            />
+            {showAddDropdown && addSearch.trim() && (
+              <div className={`absolute top-full right-0 mt-1.5 w-96 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+                {addDropdownApps.length === 0 ? (
+                  <p className={`text-xs text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                    No results for &ldquo;{addSearch}&rdquo;
+                  </p>
+                ) : addDropdownApps.map((app) => {
+                  const alreadyAdded = myAppNames.includes(app.name);
+                  return (
+                    <button key={app.name}
+                      onMouseDown={() => { if (!alreadyAdded) { addApp(app.name); setAddSearch(""); setShowAddDropdown(false); showToast(`${app.name} added!`); } }}
+                      className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${alreadyAdded ? "cursor-default opacity-50" : d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={app.icon} alt={app.name} className="w-9 h-9 rounded-xl flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+                          <span className={`text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{app.brand}</span>
+                          {alreadyAdded && (
+                            <span className={`ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-600"}`}>
+                              In hub
+                            </span>
+                          )}
+                        </div>
+                        <div className={`text-xs leading-snug mt-0.5 line-clamp-2 ${d ? "text-gray-400" : "text-gray-500"}`}>{app.description}</div>
+                        <div className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>{app.tags.join(" · ")}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {/* Share */}
           <button onClick={shareApps} title="Share hub"
             className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-medium transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             <ShareIcon />
             <span>Share</span>
           </button>
-          <button onClick={() => importInputRef.current?.click()} title="Import from JSON"
+          {/* Theme toggle */}
+          <button onClick={toggleTheme} title={d ? "Switch to light mode" : "Switch to dark mode"}
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
-            <UploadIcon />
+            {d ? <SunIcon /> : <MoonIcon />}
           </button>
-          <button onClick={exportApps} title="Export as JSON"
+          {/* Settings drawer trigger */}
+          <button onClick={() => setShowSettingsDrawer(true)} title="Settings"
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
-            <DownloadIcon />
-          </button>
-          <button onClick={exportCalendar} title="Export billing calendar (.ics)"
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
-            <CalendarIcon />
+            <SettingsIcon />
           </button>
           <input ref={importInputRef} type="file" accept=".json,application/json" className="hidden"
             onChange={(e) => {
@@ -926,83 +1075,71 @@ export default function Home() {
               e.target.value = "";
             }}
           />
-          <button onClick={toggleTheme} title={d ? "Switch to light mode" : "Switch to dark mode"}
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
-            {d ? <SunIcon /> : <MoonIcon />}
+        </div>
+      </div>
+      </div>
+
+      {/* Stats bar + filter search + select mode */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+          {myAppNames.length > 0 && (
+            <>
+              <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+                {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
+              </span>
+              {statsMonthly > 0 && (
+                <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
+                  {fmtCurrency(statsMonthly)}/mo
+                </button>
+              )}
+              {statsAnnual > 0 && (
+                <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
+                  {fmtCurrency(statsAnnual)}/yr
+                </button>
+              )}
+              {statsOnce > 0 && (
+                <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
+                  {fmtCurrency(statsOnce)} one-time
+                </button>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Filter search */}
+          <div className="relative">
+            <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input ref={searchRef} type="text" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && (setSearch(""), (e.target as HTMLInputElement).blur())}
+              className={`pl-8 pr-12 py-1.5 rounded-xl text-sm outline-none border transition-colors w-40 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+            />
+            <kbd className={`absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
+              {isMac ? <><span>⌘</span><span>K</span></> : <><span>Ctrl</span><span>K</span></>}
+            </kbd>
+          </div>
+          {/* Select mode */}
+          <button onClick={() => { exitSelectMode(); setSelectMode(true); }} title="Select apps"
+            className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${selectMode ? "bg-amber-500 text-white" : d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            <CheckSquareIcon />
           </button>
         </div>
       </div>
 
-      {/* Stats bar */}
-      {myAppNames.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
-            {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
-          </span>
-          {statsMonthly > 0 && (
-            <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-              {fmtCurrency(statsMonthly)}/mo
-            </button>
-          )}
-          {statsAnnual > 0 && (
-            <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-              {fmtCurrency(statsAnnual)}/yr
-            </button>
-          )}
-          {statsOnce > 0 && (
-            <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
-              {fmtCurrency(statsOnce)} one-time
-            </button>
-          )}
-          <div className="ml-auto relative">
-            <select
-              value={currency}
-              onChange={(e) => changeCurrency(e.target.value)}
-              className={`text-xs pl-3 pr-6 py-1.5 rounded-full font-medium appearance-none outline-none cursor-pointer transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>{c.code}</option>
-              ))}
-            </select>
-            <div className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m6 9 6 6 6-6"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <div className="relative w-full sm:w-auto">
-          <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input ref={searchRef} type="text" placeholder="Search apps…" value={search} onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && (setSearch(""), (e.target as HTMLInputElement).blur())}
-            className={`pl-9 pr-16 py-2 rounded-xl text-sm outline-none border transition-colors w-full sm:w-52 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
-          />
-          <kbd className={`absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
-            {isMac ? <><span>⌘</span><span>K</span></> : <><span>Ctrl</span><span>K</span></>}
-          </kbd>
-        </div>
-
-        {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0) && (
-          <div className={`hidden sm:block h-5 w-px ${d ? "bg-white/10" : "bg-black/10"}`} />
-        )}
-
+      <div className="mb-8">
         {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0) && (
           <div className="flex flex-wrap gap-2">
             {/* All — clears every filter */}
-            <button onClick={() => { setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === null && activeBank === null && activePayMethod === null && activeUse === null ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+            <button onClick={() => { setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); setActivePlatform(null); setActiveEmailFilter(null); }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === null && activeBank === null && activePayMethod === null && activeUse === null && activePlatform === null && activeEmailFilter === null ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
               All
             </button>
 
             {/* Category chips */}
             {availableTags.map((tag) => (
-              <button key={tag} onClick={() => { setActiveTag(activeTag === tag ? null : tag); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); }}
+              <button key={tag} onClick={() => { setActiveTag(activeTag === tag ? null : tag); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); setActivePlatform(null); setActiveEmailFilter(null); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTag === tag ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
                 {tag}
               </button>
@@ -1015,7 +1152,7 @@ export default function Home() {
             {usedBanks.map((bank) => {
               const b = bankCatalog.find((x) => x.name === bank);
               return (
-                <button key={bank} onClick={() => { setActiveBank(activeBank === bank ? null : bank); setActiveTag(null); setActivePayMethod(null); setActiveUse(null); }}
+                <button key={bank} onClick={() => { setActiveBank(activeBank === bank ? null : bank); setActiveTag(null); setActivePayMethod(null); setActiveUse(null); setActivePlatform(null); setActiveEmailFilter(null); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeBank === bank ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
                   {b && <img src={b.icon} alt={b.name} className="w-3.5 h-3.5 rounded" />}
                   {bank}
@@ -1028,7 +1165,7 @@ export default function Home() {
               <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
             )}
             {usedPayMethods.map((method) => (
-              <button key={method} onClick={() => { setActivePayMethod(activePayMethod === method ? null : method); setActiveTag(null); setActiveBank(null); setActiveUse(null); }}
+              <button key={method} onClick={() => { setActivePayMethod(activePayMethod === method ? null : method); setActiveTag(null); setActiveBank(null); setActiveUse(null); setActivePlatform(null); setActiveEmailFilter(null); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activePayMethod === method ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
                 {METHOD_LABEL[method]}
               </button>
@@ -1039,30 +1176,49 @@ export default function Home() {
               <>
                 <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
                 {(["personal", "business"] as AppUse[]).map((u) => (
-                  <button key={u} onClick={() => { setActiveUse(activeUse === u ? null : u); setActiveTag(null); setActiveBank(null); setActivePayMethod(null); }}
+                  <button key={u} onClick={() => { setActiveUse(activeUse === u ? null : u); setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActivePlatform(null); setActiveEmailFilter(null); }}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${activeUse === u ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
                     {u}
                   </button>
                 ))}
               </>
             )}
+            {/* Platform filter chips — shown once at least one app is set to Mobile or Both */}
+            {hasNonDesktopApp && (
+              <>
+                <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
+                {(["desktop", "mobile", "both"] as AppPlatform[]).map((p) => (
+                  <button key={p} onClick={() => { setActivePlatform(activePlatform === p ? null : p); setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); setActiveEmailFilter(null); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activePlatform === p ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+                    {p === "both" ? "Desktop and Mobile" : p === "mobile" ? "Mobile" : "Desktop"}
+                  </button>
+                ))}
+              </>
+            )}
+            {/* Email filter chips — shown once at least one app has an email assigned */}
+            {usedEmailFilters.length > 0 && (
+              <>
+                <div className={`w-px h-4 self-center ${d ? "bg-white/10" : "bg-black/10"}`} />
+                {usedEmailFilters.map((email) => (
+                  <button key={email} onClick={() => { setActiveEmailFilter(activeEmailFilter === email ? null : email); setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); setActivePlatform(null); }}
+                    title={email}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors max-w-[160px] truncate ${activeEmailFilter === email ? (d ? "bg-white text-black" : "bg-gray-900 text-white") : (d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-white border border-black/[0.08] text-gray-500 hover:bg-gray-50")}`}>
+                    {email}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
-
-        <button onClick={() => openAddModal(null)}
-          className="sm:ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors bg-amber-500 text-white hover:bg-amber-600">
-          <span className="text-base leading-none">+</span>
-          <span>Add App</span>
-        </button>
       </div>
 
       {/* App grid */}
-      {activeTag || activeBank || activePayMethod || activeUse || search ? (
+      {activeTag || activeBank || activePayMethod || activeUse || activePlatform || activeEmailFilter || search ? (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
               payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-              bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} d={d}
+              bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
               selectMode={selectMode} isSelected={selectedApps.has(app.name)}
               onOpen={() => openAppDetail(app.name)}
               onToggleSelect={() => toggleSelect(app.name)}
@@ -1085,7 +1241,7 @@ export default function Home() {
                 {myApps.filter((a) => pinnedApps.has(a.name)).map((app) => (
                   <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                     payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-                    bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} pinned d={d}
+                    bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} pinned d={d}
                     selectMode={selectMode} isSelected={selectedApps.has(app.name)}
                     onOpen={() => openAppDetail(app.name)}
                     onToggleSelect={() => toggleSelect(app.name)}
@@ -1097,24 +1253,23 @@ export default function Home() {
 
           {availableTags.length === 0 ? (
             <p className={`text-sm ${d ? "text-gray-600" : "text-gray-400"}`}>
-              No apps yet. Use &quot;+ Add App&quot; to get started.
+              No apps yet. Use the search bar in the header to add one.
             </p>
           ) : (
             availableTags.map((tag) => (
               <section key={tag}>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-1.5 mb-4">
                   <h2 className={`text-xs font-semibold uppercase tracking-widest ${d ? "text-gray-500" : "text-gray-400"}`}>{tag}</h2>
-                  <button onClick={() => openDeleteModal("category", tag)}
-                    className={`flex items-center gap-1.5 text-xs transition-colors ${d ? "text-gray-600 hover:text-red-400" : "text-gray-300 hover:text-red-400"}`}>
-                    <TrashIcon size={13} />
-                    <span>Delete all</span>
+                  <button onClick={() => openDeleteModal("category", tag)} title={`Delete all ${tag} apps`}
+                    className={`flex items-center justify-center w-6 h-6 rounded-full transition-colors ${d ? "text-gray-500 hover:bg-red-500/15 hover:text-red-400" : "text-gray-400 hover:bg-red-50 hover:text-red-500"}`}>
+                    <TrashIcon size={12} />
                   </button>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
                   {myApps.filter((a) => primaryTagForApp.get(a.name) === tag).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                       payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-                      bank={bankAssignments[app.name]} use={uses[app.name]} email={emails[app.name]} d={d}
+                      bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
                       selectMode={selectMode} isSelected={selectedApps.has(app.name)}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
@@ -1122,7 +1277,7 @@ export default function Home() {
                   ))}
                   {!selectMode && (
                     <button onClick={() => openAddModal(tag)}
-                      className={`flex flex-col items-center justify-center gap-3 h-36 rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
+                      className={`flex flex-col items-center justify-center gap-3 min-h-[11rem] rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
                       <span className="text-xs font-medium">Add</span>
                     </button>
@@ -1203,17 +1358,55 @@ export default function Home() {
               onKeyDown={(e) => e.key === "Enter" && saveEdit()} autoFocus
             />
 
-            {/* Account email */}
-            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>
-              Account Email <span className={`text-[10px] font-normal normal-case ${d ? "text-gray-600" : "text-gray-400"}`}>— optional</span>
+            {/* Account Email */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>
+              Account Email <span className="normal-case font-normal opacity-60">— optional</span>
             </p>
-            <input
-              type="email"
-              className={inputCls}
-              value={emailDraft}
-              placeholder="you@example.com"
-              onChange={(e) => setEmailDraft(e.target.value)}
-            />
+            {emailList.length === 0 ? (
+              <p className={`text-xs ${d ? "text-gray-600" : "text-gray-400"}`}>
+                No emails saved — use the ✉ icon in the header to add some.
+              </p>
+            ) : (
+              <>
+                {/* Trigger */}
+                <button onClick={() => setShowEmailPicker(!showEmailPicker)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-colors border ${d ? "bg-white/5 border-white/10 hover:bg-white/8" : "bg-gray-50 border-black/[0.08] hover:bg-gray-100"}`}>
+                  {emailDraft ? (
+                    <span className={`flex-1 truncate ${d ? "text-gray-200" : "text-gray-800"}`}>{emailDraft}</span>
+                  ) : (
+                    <span className={`flex-1 ${d ? "text-gray-500" : "text-gray-400"}`}>No email — tap to assign</span>
+                  )}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 transition-transform ${showEmailPicker ? "rotate-180" : ""} ${d ? "text-gray-500" : "text-gray-400"}`}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                {/* Dropdown */}
+                {showEmailPicker && (
+                  <div className={`mt-1 rounded-xl border overflow-hidden shadow-lg ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+                    <div className="max-h-48 overflow-y-auto">
+                      {emailList.map((email) => (
+                        <button key={email}
+                          onClick={() => { setEmailDraft(email === emailDraft ? "" : email); setShowEmailPicker(false); }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${emailDraft === email ? d ? "bg-white/10" : "bg-gray-100" : d ? "hover:bg-white/5" : "hover:bg-gray-50"}`}>
+                          <span className={`flex-1 truncate text-sm ${d ? "text-gray-200" : "text-gray-800"}`}>{email}</span>
+                          {emailDraft === email && (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={d ? "text-sky-400" : "text-sky-600"}>
+                              <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {emailDraft && (
+                  <button onClick={() => setEmailDraft("")}
+                    className={`mt-1.5 text-xs ${d ? "text-gray-600 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"}`}>
+                    Clear email
+                  </button>
+                )}
+              </>
+            )}
 
             {/* Status */}
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Status</p>
@@ -1247,6 +1440,21 @@ export default function Home() {
                       : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}>
                   {u}
+                </button>
+              ))}
+            </div>
+
+            {/* Platform */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Platform</p>
+            <div className="flex gap-2">
+              {(["desktop", "mobile", "both"] as AppPlatform[]).map((p) => (
+                <button key={p} onClick={() => setPlatformDraft(p)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+                    platformDraft === p
+                      ? p === "desktop" ? "bg-gray-500 text-white" : p === "mobile" ? "bg-violet-500 text-white" : "bg-teal-500 text-white"
+                      : d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}>
+                  {p === "both" ? "Desktop and Mobile" : p === "mobile" ? "Mobile" : "Desktop"}
                 </button>
               ))}
             </div>
@@ -1699,6 +1907,167 @@ export default function Home() {
         </div>
       )}
 
+      {/* Currency picker modal */}
+      {showCurrencyPicker && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => { setShowCurrencyPicker(false); setCurrencySearch(""); }}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl border flex flex-col max-h-[80vh] ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+            <div className={`flex items-center justify-between px-5 pt-5 pb-3 border-b flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+              <h2 className={`text-sm font-semibold ${d ? "text-white" : "text-gray-900"}`}>Currency</h2>
+              <button onClick={() => { setShowCurrencyPicker(false); setCurrencySearch(""); }}
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/15" : "bg-black/[0.06] text-gray-500 hover:bg-black/[0.1]"}`}>
+                ✕
+              </button>
+            </div>
+            <div className={`px-3 py-2 border-b flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search currencies…"
+                value={currencySearch}
+                onChange={(e) => setCurrencySearch(e.target.value)}
+                className={`w-full text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {CURRENCIES.filter((c) =>
+                c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                c.name.toLowerCase().includes(currencySearch.toLowerCase())
+              ).map((c) => (
+                <button key={c.code}
+                  onClick={() => { changeCurrency(c.code); setShowCurrencyPicker(false); setCurrencySearch(""); }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                    currency === c.code
+                      ? d ? "bg-white/10" : "bg-gray-100"
+                      : d ? "hover:bg-white/5" : "hover:bg-gray-50"
+                  }`}>
+                  <span className={`text-sm font-medium w-10 flex-shrink-0 ${d ? "text-gray-200" : "text-gray-800"}`}>{c.code}</span>
+                  <span className={`text-xs flex-1 ${d ? "text-gray-500" : "text-gray-400"}`}>{c.name}</span>
+                  {currency === c.code && (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={d ? "text-amber-400" : "text-amber-600"}>
+                      <path d="M20 6 9 17l-5-5"/>
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email manager modal */}
+      {showEmailManager && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowEmailManager(false)}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl border flex flex-col max-h-[80vh] ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
+            <div className={`flex items-center justify-between px-5 pt-5 pb-4 border-b flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+              <div>
+                <h2 className={`text-sm font-semibold ${d ? "text-white" : "text-gray-900"}`}>Email Accounts</h2>
+                <p className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Add your emails here, then assign one per app.</p>
+              </div>
+              <button onClick={() => setShowEmailManager(false)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/15" : "bg-black/[0.06] text-gray-500 hover:bg-black/[0.1]"}`}>
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2">
+              {emailList.length === 0 ? (
+                <p className={`text-xs text-center py-6 ${d ? "text-gray-600" : "text-gray-400"}`}>No emails yet. Add one below.</p>
+              ) : (
+                emailList.map((email) => (
+                  <div key={email} className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl ${d ? "bg-white/5" : "bg-gray-50"}`}>
+                    <span className={`text-xs truncate flex-1 ${d ? "text-gray-300" : "text-gray-700"}`}>{email}</span>
+                    <button onClick={() => removeEmailFromList(email)}
+                      className={`text-[11px] flex-shrink-0 transition-colors ${d ? "text-gray-600 hover:text-red-400" : "text-gray-400 hover:text-red-500"}`}>
+                      Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className={`px-5 pb-5 pt-3 border-t flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  className={`${inputCls} flex-1`}
+                  value={newEmailInput}
+                  placeholder="your@email.com"
+                  onChange={(e) => setNewEmailInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addEmailToList(); } }}
+                  autoFocus
+                />
+                <button onClick={addEmailToList} disabled={!newEmailInput.trim()}
+                  className={`px-4 rounded-xl text-xs font-medium transition-colors disabled:opacity-40 ${d ? "bg-white/8 text-gray-300 hover:bg-white/12" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings drawer */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${showSettingsDrawer ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"} bg-black/30 backdrop-blur-sm`}
+        onClick={() => setShowSettingsDrawer(false)}
+      />
+      <div className={`fixed top-0 right-0 h-full w-72 z-50 border-l shadow-2xl transform transition-transform duration-300 overflow-hidden ${showSettingsDrawer ? "translate-x-0" : "translate-x-full"} ${d ? "bg-[#1c1c1c] border-white/[0.08]" : "bg-white border-black/[0.08]"}`}>
+        {/* Drawer header */}
+        <div className={`flex items-center justify-between px-5 py-4 border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
+          <span className={`text-sm font-semibold ${d ? "text-white" : "text-gray-900"}`}>Settings</span>
+          <button onClick={() => setShowSettingsDrawer(false)}
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/15" : "bg-black/[0.06] text-gray-500 hover:bg-black/[0.1]"}`}>
+            ✕
+          </button>
+        </div>
+
+        <div className="overflow-y-auto h-[calc(100%-57px)]">
+          {/* Sharing & Data */}
+          <div className="px-3 pt-5">
+            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Sharing &amp; Data</p>
+            <button onClick={() => { exportApps(); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <DownloadIcon />
+              <span className="text-sm">Export JSON</span>
+            </button>
+            <button onClick={() => { importInputRef.current?.click(); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <UploadIcon />
+              <span className="text-sm">Import JSON</span>
+            </button>
+            <button onClick={() => { exportCalendar(); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <CalendarIcon />
+              <span className="text-sm">Calendar export (.ics)</span>
+            </button>
+          </div>
+
+          {/* Account */}
+          <div className="px-3 pt-5">
+            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Account</p>
+            <button onClick={() => { setShowEmailManager(true); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <EnvelopeIcon />
+              <span className="text-sm">Email Accounts</span>
+            </button>
+            <button onClick={() => { setShowCurrencyPicker(true); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <BanknoteIcon />
+              <span className="text-sm flex-1">Currency</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${d ? "bg-white/8 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{currency}</span>
+            </button>
+          </div>
+
+          {/* Danger */}
+          <div className="px-3 pt-5 pb-8">
+            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Danger</p>
+            <button onClick={() => { openDeleteModal("all"); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+              <TrashIcon />
+              <span className="text-sm">Delete all apps</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Changelog modal */}
       {showChangelog && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setShowChangelog(false)}>
@@ -1764,8 +2133,8 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, email, d, selectMode, isSelected, onOpen, onToggleSelect }: {
-  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; email?: string; d: boolean;
+function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, d, selectMode, isSelected, onOpen, onToggleSelect }: {
+  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; d: boolean;
   selectMode: boolean; isSelected: boolean;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
@@ -1812,7 +2181,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
         </div>
       )}
 
-      <div className={`relative flex flex-col items-center justify-center gap-2 h-36 rounded-2xl p-4 border transition-all duration-200 group-hover:scale-105 ${isCancelled ? "opacity-50" : ""} ${
+      <div className={`relative flex flex-col items-center justify-center gap-1.5 min-h-[11rem] rounded-2xl p-3 pb-5 border transition-all duration-200 group-hover:scale-105 ${isCancelled ? "opacity-50" : ""} ${
         isSelected && selectMode
           ? d ? "bg-amber-500/10 border-amber-500/60" : "bg-amber-50 border-amber-400"
           : d ? "bg-white/5 border-white/10 group-hover:bg-white/10" : "bg-white border-black/[0.08] group-hover:bg-[#eeece8]"
@@ -1821,35 +2190,45 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
         {dueSoon && !selectMode && (
           <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
         )}
-        {/* Bank + payment method overlays */}
-        {(bankData || (payment?.method && !isTrial && !isCancelled)) && !selectMode && (
-          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-            {bankData
-              ? <img src={bankData.icon} alt={bankData.name} className="w-5 h-5 rounded-md" title={bankData.name} />
-              : <span />
-            }
-            {payment?.method && !isTrial && !isCancelled && (
-              <span className={`text-[9px] font-medium ${d ? "text-gray-500" : "text-gray-400"}`}>{METHOD_LABEL[payment.method]}</span>
-            )}
+        {/* Bank icon (bottom-left only) */}
+        {bankData && !selectMode && (
+          <div className="absolute bottom-2.5 left-2.5">
+            <img src={bankData.icon} alt={bankData.name} className="w-5 h-5 rounded-md" title={bankData.name} />
           </div>
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
         <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
-        {!isTrial && !isCancelled && (
+        {/* All chips in a flex-wrap row */}
+        <div className="flex flex-wrap justify-center gap-1 w-full px-1">
+          {!isTrial && !isCancelled && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+              use === "business"
+                ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"
+                : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"
+            }`}>{use === "business" ? "Business" : "Personal"}</span>
+          )}
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
-            use === "business"
-              ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"
-              : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"
-          }`}>{use === "business" ? "Business" : "Personal"}</span>
-        )}
-        {isTrial && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
-        )}
-        {isCancelled && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
-        )}
-        {!isTrial && !isCancelled && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
+            (platform ?? "desktop") === "mobile"
+              ? d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"
+              : (platform ?? "desktop") === "both"
+                ? d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"
+                : d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"
+          }`}>
+            {(platform ?? "desktop") === "mobile" ? "Mobile" : (platform ?? "desktop") === "both" ? "Desktop and Mobile" : "Desktop"}
+          </span>
+          {isTrial && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
+          )}
+          {isCancelled && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
+          )}
+          {!isTrial && !isCancelled && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
+          {payment?.method && !isTrial && !isCancelled && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
+          )}
+        </div>
+        {/* Due date below chips */}
         {payment && paymentDueLabel(payment) && (
           <span className={`text-[10px] leading-none ${dueSoon ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
             {paymentDueLabel(payment)}
