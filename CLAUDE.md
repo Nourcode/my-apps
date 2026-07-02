@@ -34,3 +34,12 @@ Never save project context to `~/.claude/` — those files are local only and wo
 ## Feature tracking rule
 Whenever a new feature is implemented, add it to `FEATURES.md` in the correct section before ending the task.
 This keeps the feature list accurate and makes it easy to present or audit the app at any time.
+
+## Bank catalog rule
+Whenever a new bank is added to `app/banks.ts`, it **must also** be added to `app/catalog.ts` under the `// Finance` section.
+- Use the same `name`, `url`, `icon`, and `description` as in `banks.ts`
+- Set `tags: ["Finance"]`
+- Include the country flag emoji at the end of the description (e.g. `🇫🇷`)
+- Set `brand` to the bank's legal/short name
+
+Both files must stay in sync so users can add banks to their hub and use them as payment sources interchangeably.

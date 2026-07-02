@@ -14,6 +14,82 @@ export type Version = {
 
 const changelog: Version[] = [
   {
+    version: "2026.07.02.3",
+    date: "2026-07-02",
+    label: "Finance Category & Settings Polish",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Finance category — all 20 banks from the bank catalog are now also available as apps (Airwallex, Bank of America, Bluevine, BNP Paribas, Boursobank, Capital One, Chase, Citibank, HSBC, Mercury, N26 Personal, Payoneer, Qonto, Relay, Revolut Business, Revolut Personal, SHINE, Wells Fargo, Wise Business, Wise Personal)",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Settings drawer — Account section now appears before Sharing & Data for a more natural top-to-bottom flow",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.2",
+    date: "2026-07-02",
+    label: "Spending Filter & Properties UX",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Spending filter — when at least one app is tagged Business, All / Personal / Business pills appear in the stats bar; switching filters the monthly, annual, and one-time totals (and the billing breakdown modal) to show only that segment's costs",
+          "Properties toggle-all — 'Hide all' / 'Show all' button at the top of the Properties dropdown to enable or disable every card property in one click",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.1",
+    date: "2026-07-02",
+    label: "Properties & Catalog Polish",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "4 new apps: Airtable and ClickUp (Productivity), GoHighLevel and Kickstarter (Marketing)",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Card properties now affect Grid view too — Brand subtitle, Status chip, Business chip, and Mobile/Desktop+Mobile chip all respond to property toggles in grid mode",
+          "Properties button is now visibly styled (filled background) and shows an amber dot when any property is hidden",
+          "List-mode '+ Add' card now fills the full row height to match adjacent app cards",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02",
+    date: "2026-07-02",
+    label: "Grid / List View Switcher & Card Properties",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "View switcher — toggle between Grid (compact square cards, 3–8 columns) and List (horizontal cards with full detail) using the grid/list icons next to the search bar; preference saved across sessions",
+          "Card properties picker — click 'Properties' next to the view toggle to show/hide individual fields on list-mode cards (Brand, Status, Use, Platform, Payment, Method, Due date, Bank); preference saved across sessions",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Grid cards are simplified: icon, name, payment badge, and pin/alert indicators only — hover tooltip still shows full detail",
+          "Per-category '+ Add' card adapts to the active view (square in grid, horizontal in list)",
+          "List-mode cards now stretch to a uniform row height so the '+ Add' card always matches adjacent app cards",
+        ],
+      },
+    ],
+  },
+  {
     version: "2026.06.30.1",
     date: "2026-06-30",
     label: "Catalog Expansion",

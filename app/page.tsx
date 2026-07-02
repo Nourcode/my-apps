@@ -38,6 +38,9 @@ type AppUse = "personal" | "business";
 type AppUses = Record<string, AppUse>;
 type AppPlatform = "desktop" | "mobile" | "both";
 type DeleteTarget = { type: "all" | "category" | "selected"; tag?: string };
+type CardProperty = "brand" | "status" | "use" | "platform" | "payment" | "method" | "dueDate" | "bank";
+type CardProps = Record<CardProperty, boolean>;
+const DEFAULT_CARD_PROPS: CardProps = { brand: true, status: true, use: true, platform: true, payment: true, method: true, dueDate: true, bank: true };
 
 const CURRENCIES = [
   { code: "USD", name: "US Dollar" },
@@ -187,6 +190,31 @@ function BanknoteIcon() {
   );
 }
 
+function GridViewIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+    </svg>
+  );
+}
+
+function ListViewIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="4" rx="1"/><rect x="3" y="11" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>
+    </svg>
+  );
+}
+
+function SlidersIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="21" y1="6" x2="3" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/>
+      <circle cx="16" cy="6" r="2.5"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="18" r="2.5"/>
+    </svg>
+  );
+}
 function SettingsIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -361,11 +389,15 @@ export default function Home() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [billingView, setBillingView] = useState<"monthly" | "annually" | "once" | null>(null);
+  const [statsUseFilter, setStatsUseFilter] = useState<"all" | "personal" | "business">("all");
   const [showChangelog, setShowChangelog] = useState(false);
   const [showEmailManager, setShowEmailManager] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [cardProps, setCardProps] = useState<CardProps>(DEFAULT_CARD_PROPS);
+  const [showPropsDropdown, setShowPropsDropdown] = useState(false);
   const [addSearch, setAddSearch] = useState("");
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [lastEdited, setLastEdited] = useState<Record<string, string>>({});
@@ -399,6 +431,10 @@ export default function Home() {
     const savedPlatforms = localStorage.getItem("app-platforms");
     if (savedPlatforms) setPlatforms(JSON.parse(savedPlatforms));
     if (localStorage.getItem("theme") === "dark") setIsDark(true);
+    const savedView = localStorage.getItem("app-view");
+    if (savedView === "list" || savedView === "grid") setViewMode(savedView);
+    const savedCardProps = localStorage.getItem("app-card-props");
+    if (savedCardProps) { try { setCardProps((p) => ({ ...p, ...JSON.parse(savedCardProps) })); } catch {} }
   }, []);
 
   useEffect(() => {
@@ -963,6 +999,8 @@ export default function Home() {
 
   const editingApp = editing ? catalog.find((a) => a.name === editing) : null;
 
+  const hasBusinessApps = myAppNames.some((n) => uses[n] === "business");
+
   // Stats — only active apps count (trial = not paying yet, cancelled = no longer paying)
   let statsMonthly = 0;
   let statsAnnual = 0;
@@ -970,6 +1008,7 @@ export default function Home() {
   for (const name of myAppNames) {
     const st = statuses[name];
     if (st === "trial" || st === "cancelled") continue;
+    if (statsUseFilter !== "all" && (uses[name] ?? "personal") !== statsUseFilter) continue;
     const pay = payments[name];
     if (!pay || pay.type !== "paid" || !pay.amount) continue;
     const amt = parseFloat(pay.amount);
@@ -984,6 +1023,11 @@ export default function Home() {
   }
 
   const d = isDark;
+
+  const gridCls = viewMode === "grid"
+    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4"
+    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3";
+
   const inputCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`;
   const selectCls = `w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors appearance-none ${d ? "bg-white/5 border-white/10 text-white focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 focus:border-black/20"}`;
 
@@ -1019,9 +1063,27 @@ export default function Home() {
               onKeyDown={(e) => e.key === "Escape" && (setAddSearch(""), setShowAddDropdown(false), (e.target as HTMLInputElement).blur())}
               className={`pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none border transition-colors w-72 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
             />
-            {showAddDropdown && addSearch.trim() && (
+            {showAddDropdown && (
               <div className={`absolute top-full right-0 mt-1.5 w-96 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
-                {addDropdownApps.length === 0 ? (
+                {!addSearch.trim() ? (
+                  /* Empty / focused state — browse prompt */
+                  <button
+                    onMouseDown={() => { setShowAddDropdown(false); openAddModal(null); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
+                    <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${d ? "bg-white/8" : "bg-gray-100"}`}>
+                      ✦
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>Browse all {catalog.length} apps</div>
+                      <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                        {myAppNames.length} in your hub · {catalog.length - myAppNames.length} available to add
+                      </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 ${d ? "text-gray-600" : "text-gray-300"}`}>
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                ) : addDropdownApps.length === 0 ? (
                   <p className={`text-xs text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
                     No results for &ldquo;{addSearch}&rdquo;
                   </p>
@@ -1079,33 +1141,14 @@ export default function Home() {
       </div>
       </div>
 
-      {/* Stats bar + filter search + select mode */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {myAppNames.length > 0 && (
-            <>
-              <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
-                {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
-              </span>
-              {statsMonthly > 0 && (
-                <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-                  {fmtCurrency(statsMonthly)}/mo
-                </button>
-              )}
-              {statsAnnual > 0 && (
-                <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-                  {fmtCurrency(statsAnnual)}/yr
-                </button>
-              )}
-              {statsOnce > 0 && (
-                <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
-                  {fmtCurrency(statsOnce)} one-time
-                </button>
-              )}
-            </>
-          )}
-        </div>
+      {/* Controls row — app count lives here now */}
+      <div className="flex items-center justify-end gap-4 mb-5">
         <div className="flex items-center gap-2 flex-shrink-0">
+          {myAppNames.length > 0 && (
+            <span className={`text-xs px-3 py-1.5 rounded-full font-medium flex-shrink-0 ${d ? "bg-white/8 text-gray-400" : "bg-black/[0.05] text-gray-500"}`}>
+              {myAppNames.length} app{myAppNames.length !== 1 ? "s" : ""}
+            </span>
+          )}
           {/* Filter search */}
           <div className="relative">
             <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1124,12 +1167,109 @@ export default function Home() {
             className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors flex-shrink-0 ${selectMode ? "bg-amber-500 text-white" : d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
             <CheckSquareIcon />
           </button>
+          {/* View toggle */}
+          <div className={`flex items-center rounded-lg overflow-hidden border ${d ? "border-white/10" : "border-black/[0.08]"}`}>
+            <button onClick={() => { setViewMode("grid"); localStorage.setItem("app-view", "grid"); }} title="Grid view"
+              className={`flex items-center justify-center w-8 h-8 transition-colors ${viewMode === "grid" ? d ? "bg-white/15 text-white" : "bg-black/[0.08] text-gray-800" : d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+              <GridViewIcon />
+            </button>
+            <button onClick={() => { setViewMode("list"); localStorage.setItem("app-view", "list"); }} title="List view"
+              className={`flex items-center justify-center w-8 h-8 transition-colors ${viewMode === "list" ? d ? "bg-white/15 text-white" : "bg-black/[0.08] text-gray-800" : d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+              <ListViewIcon />
+            </button>
+          </div>
+          {/* Properties */}
+          <div className="relative">
+            <button onClick={() => setShowPropsDropdown((v) => !v)} title="Card properties"
+              className={`flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium transition-colors border ${showPropsDropdown ? d ? "bg-white/15 border-white/20 text-white" : "bg-black/[0.08] border-black/[0.12] text-gray-800" : d ? "bg-white/8 border-white/10 text-gray-300 hover:bg-white/12 hover:text-white" : "bg-black/[0.05] border-black/[0.08] text-gray-600 hover:bg-black/[0.08] hover:text-gray-800"}`}>
+              <SlidersIcon />
+              <span>Properties</span>
+              {Object.values(cardProps).some((v) => !v) && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+            </button>
+            {showPropsDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowPropsDropdown(false)} />
+                <div className={`absolute top-full right-0 mt-1.5 w-64 rounded-2xl border shadow-2xl p-3 z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <p className={`text-[11px] font-semibold uppercase tracking-wider ${d ? "text-gray-500" : "text-gray-400"}`}>Card properties</p>
+                    <button
+                      onClick={() => {
+                        const allOn = Object.values(cardProps).every((v) => v);
+                        const next = Object.fromEntries(Object.keys(cardProps).map((k) => [k, !allOn])) as CardProps;
+                        setCardProps(next);
+                        localStorage.setItem("app-card-props", JSON.stringify(next));
+                      }}
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${d ? "text-gray-400 hover:bg-white/8 hover:text-gray-200" : "text-gray-500 hover:bg-black/[0.05] hover:text-gray-700"}`}>
+                      {Object.values(cardProps).every((v) => v) ? "Hide all" : "Show all"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-0.5">
+                    {([
+                      ["brand", "Brand"], ["payment", "Payment"],
+                      ["status", "Status"], ["method", "Method"],
+                      ["use", "Use"], ["dueDate", "Due date"],
+                      ["platform", "Platform"], ["bank", "Bank"],
+                    ] as [CardProperty, string][]).map(([prop, label]) => (
+                      <button key={prop}
+                        onClick={() => setCardProps((prev) => {
+                          const next = { ...prev, [prop]: !prev[prop] };
+                          localStorage.setItem("app-card-props", JSON.stringify(next));
+                          return next;
+                        })}
+                        className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-xs transition-colors text-left ${d ? "hover:bg-white/6" : "hover:bg-black/[0.04]"}`}>
+                        <span className={cardProps[prop] ? d ? "text-gray-200" : "text-gray-700" : d ? "text-gray-500" : "text-gray-400"}>{label}</span>
+                        <div className={`w-7 h-4 rounded-full flex items-center transition-colors flex-shrink-0 ${cardProps[prop] ? "bg-amber-500" : d ? "bg-white/15" : "bg-black/15"}`}>
+                          <div className={`w-3 h-3 rounded-full bg-white shadow transition-transform ${cardProps[prop] ? "translate-x-3.5" : "translate-x-0.5"}`} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Spending section */}
+      {myAppNames.length > 0 && (statsMonthly > 0 || statsAnnual > 0 || statsOnce > 0 || hasBusinessApps) && (
+        <div className="mb-5">
+          <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Spending</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {hasBusinessApps && (
+              <div className={`flex items-center rounded-lg overflow-hidden border text-xs font-medium ${d ? "border-white/10" : "border-black/[0.08]"}`}>
+                {(["all", "personal", "business"] as const).map((f) => (
+                  <button key={f} onClick={() => setStatsUseFilter(f)}
+                    className={`px-2.5 py-1.5 transition-colors capitalize ${statsUseFilter === f ? d ? "bg-white/15 text-white" : "bg-black/[0.08] text-gray-800" : d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
+            {statsMonthly > 0 && (
+              <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
+                {fmtCurrency(statsMonthly)}/mo
+              </button>
+            )}
+            {statsAnnual > 0 && (
+              <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
+                {fmtCurrency(statsAnnual)}/yr
+              </button>
+            )}
+            {statsOnce > 0 && (
+              <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
+                {fmtCurrency(statsOnce)} one-time
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="mb-8">
-        {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0) && (
+        {(availableTags.length > 0 || usedBanks.length > 0 || usedPayMethods.length > 0 || usedEmailFilters.length > 0) && (
+          <>
+            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Display</p>
           <div className="flex flex-wrap gap-2">
             {/* All — clears every filter */}
             <button onClick={() => { setActiveTag(null); setActiveBank(null); setActivePayMethod(null); setActiveUse(null); setActivePlatform(null); setActiveEmailFilter(null); }}
@@ -1209,17 +1349,18 @@ export default function Home() {
               </>
             )}
           </div>
+          </>
         )}
       </div>
 
       {/* App grid */}
       {activeTag || activeBank || activePayMethod || activeUse || activePlatform || activeEmailFilter || search ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
+        <div className={gridCls}>
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
               payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
               bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
-              selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+              selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
               onOpen={() => openAppDetail(app.name)}
               onToggleSelect={() => toggleSelect(app.name)}
             />
@@ -1237,12 +1378,12 @@ export default function Home() {
                 <span className="text-amber-500"><PinIcon size={12} filled /></span>
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-500">Pinned</h2>
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
+              <div className={gridCls}>
                 {myApps.filter((a) => pinnedApps.has(a.name)).map((app) => (
                   <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                     payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
                     bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} pinned d={d}
-                    selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+                    selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
                     onOpen={() => openAppDetail(app.name)}
                     onToggleSelect={() => toggleSelect(app.name)}
                   />
@@ -1265,22 +1406,30 @@ export default function Home() {
                     <TrashIcon size={12} />
                   </button>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
+                <div className={gridCls}>
                   {myApps.filter((a) => primaryTagForApp.get(a.name) === tag).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                       payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
                       bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
-                      selectMode={selectMode} isSelected={selectedApps.has(app.name)}
+                      selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
                     />
                   ))}
                   {!selectMode && (
-                    <button onClick={() => openAddModal(tag)}
-                      className={`flex flex-col items-center justify-center gap-3 min-h-[11rem] rounded-2xl p-4 border border-dashed hover:scale-105 transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-light">+</div>
-                      <span className="text-xs font-medium">Add</span>
-                    </button>
+                    viewMode === "grid" ? (
+                      <button onClick={() => openAddModal(tag)}
+                        className={`flex flex-col items-center justify-center gap-1 min-h-[6.5rem] rounded-2xl border border-dashed transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
+                        <span className="text-xl font-light leading-none">+</span>
+                        <span className="text-[10px] font-medium">Add</span>
+                      </button>
+                    ) : (
+                      <button onClick={() => openAddModal(tag)}
+                        className={`flex items-center justify-center gap-2 h-full min-h-[4.5rem] rounded-2xl px-4 border border-dashed transition-all duration-200 ${d ? "border-white/20 text-white/30 hover:border-amber-500/50 hover:text-amber-400" : "border-black/20 text-black/25 hover:border-amber-500/50 hover:text-amber-500"}`}>
+                        <span className="text-lg font-light leading-none">+</span>
+                        <span className="text-xs font-medium">Add</span>
+                      </button>
+                    )
                   )}
                 </div>
               </section>
@@ -1757,7 +1906,9 @@ export default function Home() {
         const entries: BillingEntry[] = myAppNames
           .filter((name) => {
             const st = statuses[name];
-            return st !== "trial" && st !== "cancelled";
+            if (st === "trial" || st === "cancelled") return false;
+            if (statsUseFilter !== "all" && (uses[name] ?? "personal") !== statsUseFilter) return false;
+            return true;
           })
           .map((name) => {
             const app = catalog.find((a) => a.name === name);
@@ -1780,7 +1931,9 @@ export default function Home() {
                   <span className={`text-sm font-semibold ${d ? "text-gray-300" : "text-gray-700"}`}>{totalLabels[billingView]}</span>
                 )}
               </div>
-              <p className={`text-xs mb-5 ${d ? "text-gray-500" : "text-gray-400"}`}>Active only · Trial &amp; cancelled excluded</p>
+              <p className={`text-xs mb-5 ${d ? "text-gray-500" : "text-gray-400"}`}>
+                Active only · Trial &amp; cancelled excluded{statsUseFilter !== "all" ? ` · ${statsUseFilter === "personal" ? "Personal" : "Business"} apps only` : ""}
+              </p>
 
               {entries.length === 0 ? (
                 <p className={`text-sm py-6 text-center ${d ? "text-gray-500" : "text-gray-400"}`}>No active paid apps in this category.</p>
@@ -2020,6 +2173,22 @@ export default function Home() {
         </div>
 
         <div className="overflow-y-auto h-[calc(100%-57px)]">
+          {/* Account */}
+          <div className="px-3 pt-5">
+            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Account</p>
+            <button onClick={() => { setShowEmailManager(true); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <EnvelopeIcon />
+              <span className="text-sm">Email Accounts</span>
+            </button>
+            <button onClick={() => { setShowCurrencyPicker(true); setShowSettingsDrawer(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
+              <BanknoteIcon />
+              <span className="text-sm flex-1">Currency</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${d ? "bg-white/8 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{currency}</span>
+            </button>
+          </div>
+
           {/* Sharing & Data */}
           <div className="px-3 pt-5">
             <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Sharing &amp; Data</p>
@@ -2037,22 +2206,6 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
               <CalendarIcon />
               <span className="text-sm">Calendar export (.ics)</span>
-            </button>
-          </div>
-
-          {/* Account */}
-          <div className="px-3 pt-5">
-            <p className={`text-[10px] font-semibold uppercase tracking-widest mb-1 px-2 ${d ? "text-gray-600" : "text-gray-400"}`}>Account</p>
-            <button onClick={() => { setShowEmailManager(true); setShowSettingsDrawer(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
-              <EnvelopeIcon />
-              <span className="text-sm">Email Accounts</span>
-            </button>
-            <button onClick={() => { setShowCurrencyPicker(true); setShowSettingsDrawer(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${d ? "text-gray-300 hover:bg-white/6" : "text-gray-700 hover:bg-gray-50"}`}>
-              <BanknoteIcon />
-              <span className="text-sm flex-1">Currency</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${d ? "bg-white/8 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{currency}</span>
             </button>
           </div>
 
@@ -2133,9 +2286,9 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, d, selectMode, isSelected, onOpen, onToggleSelect }: {
+function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, d, selectMode, isSelected, viewMode, cardProps, onOpen, onToggleSelect }: {
   app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; d: boolean;
-  selectMode: boolean; isSelected: boolean;
+  selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
   const bankData = bank ? bankCatalog.find((b) => b.name === bank) : null;
@@ -2161,12 +2314,101 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
     .filter(Boolean)
     .join(" · ");
 
+  const cardBase = `relative rounded-2xl border transition-all duration-200 group-hover:-translate-y-px ${isCancelled ? "opacity-50" : ""} ${
+    isSelected && selectMode
+      ? d ? "bg-amber-500/10 border-amber-500/60" : "bg-amber-50 border-amber-400"
+      : d ? "bg-white/5 border-white/10 group-hover:bg-white/8 group-hover:border-white/15" : "bg-white border-black/[0.08] group-hover:bg-[#f9f8f5] group-hover:shadow-sm"
+  }`;
+
+  if (viewMode === "grid") {
+    return (
+      <div className="group relative cursor-pointer" onClick={selectMode ? onToggleSelect : onOpen}>
+        {!selectMode && (
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-56 text-xs rounded-xl px-3 py-2.5 leading-snug pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
+            <div>{app.description}</div>
+            {tooltipMeta && <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>}
+            {email && <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>}
+            {notes && <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>}
+            <div className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
+          </div>
+        )}
+        <div className={`${cardBase} relative flex flex-col items-center px-2.5 pt-5 pb-7 min-h-[7rem]`}>
+          {/* Icon */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl mb-2 flex-shrink-0" />
+
+          {/* Name + inline indicators */}
+          <div className="flex items-center justify-center gap-1 w-full px-1">
+            <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+            {!selectMode && pinned && <span className="text-amber-500 flex-shrink-0"><PinIcon size={8} filled /></span>}
+            {!selectMode && dueSoon && <span className="w-1 h-1 rounded-full bg-orange-400 animate-pulse flex-shrink-0" />}
+          </div>
+
+          {/* Brand */}
+          {cardProps.brand && <span className={`text-[9px] text-center mt-0.5 ${d ? "text-gray-600" : "text-gray-400"}`}>{app.brand}</span>}
+
+          {/* Chips — status / use / platform */}
+          {!selectMode && (
+            <div className="flex flex-wrap justify-center gap-0.5 mt-1.5 px-1">
+              {cardProps.status && isTrial && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
+              )}
+              {cardProps.status && isCancelled && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
+              )}
+              {cardProps.use && !isTrial && !isCancelled && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none ${use === "business" ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600" : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"}`}>
+                  {use === "business" ? "Business" : "Personal"}
+                </span>
+              )}
+              {cardProps.platform && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none ${(platform ?? "desktop") === "mobile" ? d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600" : (platform ?? "desktop") === "both" ? d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600" : d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>
+                  {(platform ?? "desktop") === "mobile" ? "Mobile" : (platform ?? "desktop") === "both" ? "Desktop and Mobile" : "Desktop"}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Payment badge */}
+          {!selectMode && cardProps.payment && showPaymentInfo && payment && (
+            <div className="mt-1.5"><PaymentBadge payment={payment} currency={currency} d={d} /></div>
+          )}
+
+          {/* Method chip */}
+          {!selectMode && cardProps.method && payment?.method && !isTrial && !isCancelled && (
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none mt-1 ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
+          )}
+
+          {/* Due date */}
+          {!selectMode && cardProps.dueDate && payment && paymentDueLabel(payment) && (
+            <span className={`text-[9px] mt-0.5 leading-none ${dueSoon ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
+              {dueSoon && dueSoonLabel ? dueSoonLabel : paymentDueLabel(payment)}
+            </span>
+          )}
+
+          {/* Bank icon — bottom-left corner */}
+          {!selectMode && cardProps.bank && bankData && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={bankData.icon} alt={bankData.name} className="absolute bottom-2.5 left-2.5 w-4 h-4 rounded-md" title={bankData.name} />
+          )}
+
+          {/* Select indicator */}
+          {selectMode && (
+            <div className={`mt-2 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isSelected ? "bg-amber-500 text-white" : d ? "bg-white/15 text-transparent" : "bg-black/10 text-transparent"}`}>
+              {isSelected && <CheckIcon />}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="group relative cursor-pointer" onClick={selectMode ? onToggleSelect : onOpen}>
+    <div className="group relative cursor-pointer h-full" onClick={selectMode ? onToggleSelect : onOpen}>
 
       {/* Tooltip — only in normal mode */}
       {!selectMode && (
-        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-44 text-xs rounded-xl px-3 py-2.5 leading-snug text-center pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
+        <div className={`absolute bottom-full left-0 mb-2.5 w-56 text-xs rounded-xl px-3 py-2.5 leading-snug pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
           <div>{app.description}</div>
           {tooltipMeta && (
             <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>
@@ -2177,80 +2419,80 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
           {notes && (
             <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>
           )}
-          <div className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
+          <div className={`absolute top-full left-4 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
         </div>
       )}
 
-      <div className={`relative flex flex-col items-center justify-center gap-1.5 min-h-[11rem] rounded-2xl p-3 pb-5 border transition-all duration-200 group-hover:scale-105 ${isCancelled ? "opacity-50" : ""} ${
-        isSelected && selectMode
-          ? d ? "bg-amber-500/10 border-amber-500/60" : "bg-amber-50 border-amber-400"
-          : d ? "bg-white/5 border-white/10 group-hover:bg-white/10" : "bg-white border-black/[0.08] group-hover:bg-[#eeece8]"
-      }`}>
-        {/* Billing alert dot */}
-        {dueSoon && !selectMode && (
-          <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
-        )}
-        {/* Bank icon (bottom-left only) */}
-        {bankData && !selectMode && (
-          <div className="absolute bottom-2.5 left-2.5">
-            <img src={bankData.icon} alt={bankData.name} className="w-5 h-5 rounded-md" title={bankData.name} />
+      <div className={`${cardBase} flex items-center gap-3 px-4 py-3 h-full`}>
+
+        {/* App icon */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl flex-shrink-0" />
+
+        {/* Left: name, brand, chips */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={`text-sm font-semibold truncate ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+            {!selectMode && pinned && <span className="text-amber-500 flex-shrink-0"><PinIcon size={10} filled /></span>}
+            {dueSoon && !selectMode && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse flex-shrink-0" />}
+          </div>
+          {cardProps.brand && <span className={`text-xs truncate block ${d ? "text-gray-500" : "text-gray-400"}`}>{app.brand}</span>}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {cardProps.status && isTrial && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
+            )}
+            {cardProps.status && isCancelled && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
+            )}
+            {cardProps.use && !isTrial && !isCancelled && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+                use === "business"
+                  ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"
+                  : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"
+              }`}>{use === "business" ? "Business" : "Personal"}</span>
+            )}
+            {cardProps.platform && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+                (platform ?? "desktop") === "mobile"
+                  ? d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"
+                  : (platform ?? "desktop") === "both"
+                    ? d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"
+                    : d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"
+              }`}>
+                {(platform ?? "desktop") === "mobile" ? "Mobile" : (platform ?? "desktop") === "both" ? "Desktop and Mobile" : "Desktop"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Right: payment info */}
+        {!selectMode && (
+          <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+            {cardProps.payment && showPaymentInfo && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
+            {cardProps.method && payment?.method && !isTrial && !isCancelled && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
+            )}
+            {cardProps.dueDate && payment && paymentDueLabel(payment) && (
+              <span className={`text-[10px] leading-none ${dueSoon ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
+                {dueSoon && dueSoonLabel ? dueSoonLabel : paymentDueLabel(payment)}
+              </span>
+            )}
+            {cardProps.bank && bankData && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={bankData.icon} alt={bankData.name} className="w-4 h-4 rounded-md" title={bankData.name} />
+            )}
           </div>
         )}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={app.icon} alt={app.name} className="w-10 h-10 rounded-xl" />
-        <span className={`text-xs font-medium text-center leading-tight ${d ? "text-gray-300" : "text-gray-600"}`}>{app.name}</span>
-        {/* All chips in a flex-wrap row */}
-        <div className="flex flex-wrap justify-center gap-1 w-full px-1">
-          {!isTrial && !isCancelled && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
-              use === "business"
-                ? d ? "bg-indigo-500/15 text-indigo-400" : "bg-indigo-50 text-indigo-600"
-                : d ? "bg-sky-500/15 text-sky-400" : "bg-sky-50 text-sky-600"
-            }`}>{use === "business" ? "Business" : "Personal"}</span>
-          )}
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
-            (platform ?? "desktop") === "mobile"
-              ? d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"
-              : (platform ?? "desktop") === "both"
-                ? d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"
-                : d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"
+
+        {/* Select mode indicator */}
+        {selectMode && (
+          <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+            isSelected ? "bg-amber-500 text-white" : d ? "bg-white/15 text-transparent" : "bg-black/10 text-transparent"
           }`}>
-            {(platform ?? "desktop") === "mobile" ? "Mobile" : (platform ?? "desktop") === "both" ? "Desktop and Mobile" : "Desktop"}
-          </span>
-          {isTrial && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-violet-500/15 text-violet-400" : "bg-violet-50 text-violet-600"}`}>Trial</span>
-          )}
-          {isCancelled && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-gray-500/20 text-gray-500" : "bg-gray-100 text-gray-400"}`}>Cancelled</span>
-          )}
-          {!isTrial && !isCancelled && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
-          {payment?.method && !isTrial && !isCancelled && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
-          )}
-        </div>
-        {/* Due date below chips */}
-        {payment && paymentDueLabel(payment) && (
-          <span className={`text-[10px] leading-none ${dueSoon ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
-            {paymentDueLabel(payment)}
-          </span>
+            {isSelected && <CheckIcon />}
+          </div>
         )}
       </div>
-
-      {/* Pin badge (normal mode only) */}
-      {!selectMode && pinned && (
-        <div className="absolute top-2.5 right-2.5 text-amber-500">
-          <PinIcon size={20} filled />
-        </div>
-      )}
-
-      {/* Select mode indicator */}
-      {selectMode && (
-        <div className={`absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-          isSelected ? "bg-amber-500 text-white" : d ? "bg-white/15 text-transparent" : "bg-black/10 text-transparent"
-        }`}>
-          {isSelected && <CheckIcon />}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,9 @@
 
 Feature suggestions
 
-New apps to add: OBS (recording), ADA (car renting in France), Uber eats, deliveroo, carrefour (it's french), Shopify, Wordpress
+Swap "sharing and data" with "account" sections order in the settings. 
+Add all the banks as apps as well (we use them for payment be also have to install them or connect to them).
+
+New apps to add: SFR (french app for mobile), Interactive Brokers, itch.io
 
 Recommended agents or skills and mcps.

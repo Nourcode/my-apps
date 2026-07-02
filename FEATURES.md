@@ -85,6 +85,10 @@ A running record of every feature implemented in the app. Update this file whene
 
 ## Visuals & UX
 
+- **View switcher** — toggle between Grid and List view using the grid/list icons next to the search bar; preference saved across sessions
+  - **Grid view** — compact square cards in a dense grid (3 columns on mobile up to 8 on large screens); each card shows icon, name, payment badge, and pin/alert indicators; tooltip on hover shows full detail
+  - **List view** — horizontal cards with icon, name, and selectable properties on the left and payment info on the right; rows stretch to uniform height so the "+ Add" card always matches adjacent cards
+- **Card properties picker** — click the "Properties" button (sliders icon, next to the view toggle) to show/hide individual fields on list-mode cards; toggles: Brand, Status, Use, Platform, Payment, Method, Due date, Bank; each preference saved across sessions
 - **App cards** — each app shown as a card with its logo, name, payment badge, and status chip
 - **Hover tooltip** — hovering a card shows the app description, payment info, billing date, and notes (if any)
 - **Dark / light mode** — toggle between themes; preference saved across sessions
@@ -98,4 +102,4 @@ A running record of every feature implemented in the app. Update this file whene
 
 ---
 
-*Last updated: 2026-06-29*
+*Last updated: 2026-07-02 (v2)*
