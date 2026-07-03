@@ -1,0 +1,708 @@
+{
+  "currency": "USD",
+  "emailList": [
+    "noureddinesaidana@gmail.com",
+    "noursaidana@kinzoraco.com"
+  ],
+  "apps": [
+    {
+      "name": "Spotify",
+      "brand": "Spotify",
+      "url": "https://spotify.com",
+      "tags": [
+        "Entertainment"
+      ],
+      "description": "Music and podcast streaming service with millions of tracks.",
+      "payment": {
+        "type": "paid",
+        "amount": "12.99",
+        "period": "monthly",
+        "day": 30,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T08:22:35.796Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "both",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Loom",
+      "brand": "Loom",
+      "url": "https://loom.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Screen and video recording tool for async communication and walkthroughs.",
+      "payment": {
+        "type": "paid",
+        "amount": "24",
+        "period": "monthly",
+        "day": 4,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T08:28:28.251Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Upwork",
+      "brand": "Upwork",
+      "url": "https://upwork.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Global freelancing platform to find, hire, and collaborate with independent professionals.",
+      "payment": {
+        "type": "paid",
+        "amount": "19.99",
+        "period": "monthly",
+        "day": 24,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T08:38:45.251Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "both",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "n8n",
+      "brand": "n8n",
+      "url": "https://n8n.io",
+      "tags": [
+        "Automation"
+      ],
+      "description": "Open-source workflow automation tool for connecting apps and APIs with code flexibility.",
+      "payment": {
+        "type": "paid",
+        "amount": "33",
+        "period": "monthly",
+        "day": 2,
+        "method": "mastercard"
+      },
+      "notes": "Instance: noursai",
+      "status": null,
+      "lastEdited": "2026-07-02T09:03:53.093Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Claude",
+      "brand": "Anthropic",
+      "url": "https://claude.ai",
+      "tags": [
+        "AI"
+      ],
+      "description": "AI assistant for writing, coding, and analysis.",
+      "payment": {
+        "type": "paid",
+        "amount": "25",
+        "period": "monthly",
+        "day": 1,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:24:15.360Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "YouTube",
+      "brand": "Google",
+      "url": "https://youtube.com",
+      "tags": [
+        "Entertainment"
+      ],
+      "description": "Video streaming platform for watching and sharing content worldwide.",
+      "payment": {
+        "type": "paid",
+        "amount": "15.30",
+        "period": "monthly",
+        "day": 11,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:33:19.737Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "both",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Discord",
+      "brand": "Discord",
+      "url": "https://discord.com",
+      "tags": [
+        "Social"
+      ],
+      "description": "Voice, video, and text chat platform for communities and teams.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "OBS Studio",
+      "brand": "OBS Project",
+      "url": "https://obsproject.com",
+      "tags": [
+        "Design"
+      ],
+      "description": "Free and open-source software for video recording and live streaming with scene composition, audio mixing, and real-time encoding.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Make",
+      "brand": "Make",
+      "url": "https://make.com",
+      "tags": [
+        "Automation"
+      ],
+      "description": "Visual no-code platform for building automated workflows between apps.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Airtable",
+      "brand": "Airtable",
+      "url": "https://airtable.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Flexible database and spreadsheet hybrid for organizing work, tracking projects, and building internal tools.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "ClickUp",
+      "brand": "ClickUp",
+      "url": "https://clickup.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "All-in-one project management platform with tasks, docs, goals, whiteboards, and automations in one place.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Adobe After Effects",
+      "brand": "Adobe",
+      "url": "https://adobe.com/products/aftereffects.html",
+      "tags": [
+        "Design"
+      ],
+      "description": "Motion graphics and visual effects software for film, TV, video, and web.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": "cancelled",
+      "lastEdited": "2026-07-02T19:22:39.675Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Apple Store",
+      "brand": "Apple",
+      "url": "https://apple.com/shop",
+      "tags": [
+        "Shopping"
+      ],
+      "description": "Apple's official store for purchasing iPhones, Macs, iPads, and accessories, and for managing subscriptions and Apple services.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T14:05:11.147Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "ChatGPT",
+      "brand": "OpenAI",
+      "url": "https://chatgpt.com",
+      "tags": [
+        "AI"
+      ],
+      "description": "AI conversational assistant for writing, coding, research, and problem-solving.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T22:43:24.630Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Gemini",
+      "brand": "Google",
+      "url": "https://gemini.google.com",
+      "tags": [
+        "AI"
+      ],
+      "description": "Google's AI assistant for multimodal tasks including text, images, and code.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T23:26:13.231Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": "Geminito"
+    },
+    {
+      "name": "CapCut",
+      "brand": "ByteDance",
+      "url": "https://capcut.com",
+      "tags": [
+        "Design"
+      ],
+      "description": "AI-powered video editor for creating short-form content with effects, templates, and auto-captions.",
+      "payment": {
+        "type": "paid",
+        "amount": "13.99",
+        "period": "monthly",
+        "day": 3
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:35:40.140Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Dropbox",
+      "brand": "Dropbox",
+      "url": "https://dropbox.com",
+      "tags": [
+        "Storage"
+      ],
+      "description": "Cloud storage and file sharing service for syncing files across devices.",
+      "payment": {
+        "type": "paid",
+        "amount": "13.92",
+        "period": "monthly"
+      },
+      "notes": null,
+      "status": "cancelled",
+      "lastEdited": "2026-07-02T19:27:54.060Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Revolut Business",
+      "brand": "Revolut",
+      "url": "https://business.revolut.com",
+      "tags": [
+        "Finance"
+      ],
+      "description": "Business account with multi-currency wallets, expense management, and global payments. 🇬🇧",
+      "payment": {
+        "type": "paid",
+        "amount": "10",
+        "period": "monthly",
+        "day": 2,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:28:55.327Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "both",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Skool",
+      "brand": "Skool",
+      "url": "https://skool.com",
+      "tags": [
+        "Marketing"
+      ],
+      "description": "Community and online course platform for creators to build and monetize their audience.",
+      "payment": {
+        "type": "paid",
+        "amount": "184",
+        "period": "monthly",
+        "day": 17,
+        "method": "visa"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:30:56.770Z",
+      "bank": "Relay",
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Baselang",
+      "brand": "Baselang",
+      "url": "https://baselang.com",
+      "tags": [
+        "Learning"
+      ],
+      "description": "Subscription language learning service with unlimited 1-on-1 tutoring sessions for immersive language acquisition.",
+      "payment": {
+        "type": "paid",
+        "amount": "99",
+        "period": "monthly"
+      },
+      "notes": null,
+      "status": "cancelled",
+      "lastEdited": "2026-07-02T19:31:32.103Z",
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Holafly",
+      "brand": "Holafly",
+      "url": "https://holafly.com",
+      "tags": [
+        "Travel"
+      ],
+      "description": "eSIM provider with instant data plans for 170+ countries — no physical SIM needed, activate before you fly.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Google Workspace",
+      "brand": "Google",
+      "url": "https://workspace.google.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Google's business productivity suite including Gmail, Docs, Drive, Meet, and Calendar.",
+      "payment": {
+        "type": "paid",
+        "amount": "23",
+        "period": "monthly"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:41:44.736Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "both",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Tinder",
+      "brand": "Match Group",
+      "url": "https://tinder.com",
+      "tags": [
+        "Social"
+      ],
+      "description": "Dating app for swiping, matching, and connecting with people nearby.",
+      "payment": {
+        "type": "paid",
+        "amount": "180",
+        "period": "annually",
+        "day": 16,
+        "month": 10,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T19:54:25.336Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "mobile",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Google Domains",
+      "brand": "Google",
+      "url": "https://domains.google.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Domain registration and management through Google — buy, renew, and configure DNS for your custom domain.",
+      "payment": {
+        "type": "paid",
+        "amount": "12",
+        "period": "annually",
+        "day": 5,
+        "month": 8,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T23:14:22.356Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "OneDrive",
+      "brand": "Microsoft",
+      "url": "https://onedrive.live.com",
+      "tags": [
+        "Storage"
+      ],
+      "description": "Microsoft's cloud storage service integrated with Office 365 for syncing and sharing files across devices.",
+      "payment": {
+        "type": "paid",
+        "amount": "20",
+        "period": "annually",
+        "day": 7,
+        "month": 8,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T23:21:58.861Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "personal",
+      "email": "noureddinesaidana@gmail.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Doola",
+      "brand": "Doola",
+      "url": "https://doola.com",
+      "tags": [
+        "Productivity"
+      ],
+      "description": "Business formation and compliance platform for launching LLCs, C-corps, and sole proprietorships.",
+      "payment": {
+        "type": "paid",
+        "amount": "2000",
+        "period": "annually",
+        "day": 26,
+        "month": 3,
+        "method": "mastercard"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": "2026-07-02T23:34:16.922Z",
+      "bank": "Revolut Business",
+      "pinned": false,
+      "use": "business",
+      "email": "noursaidana@kinzoraco.com",
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Kickstarter",
+      "brand": "Kickstarter",
+      "url": "https://kickstarter.com",
+      "tags": [
+        "Marketing"
+      ],
+      "description": "Crowdfunding platform to launch creative products, games, and projects and reach a global community of backers.",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "SFR",
+      "brand": "SFR",
+      "url": "https://sfr.fr",
+      "tags": [
+        "Telecom"
+      ],
+      "description": "French telecom operator offering mobile plans, broadband, and TV services — manage your account, bills, and data usage. 🇫🇷",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    },
+    {
+      "name": "Fitness Park",
+      "brand": "Fitness Park",
+      "url": "https://fitnesspark.fr",
+      "tags": [
+        "Health"
+      ],
+      "description": "French gym chain with 200+ clubs offering 24/7 access, group classes, and fitness equipment across France. 🇫🇷",
+      "payment": {
+        "type": "free"
+      },
+      "notes": null,
+      "status": null,
+      "lastEdited": null,
+      "bank": null,
+      "pinned": false,
+      "use": "personal",
+      "email": null,
+      "platform": "desktop",
+      "hint": null,
+      "nickname": null
+    }
+  ]
+}

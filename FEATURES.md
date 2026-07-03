@@ -34,8 +34,10 @@ A running record of every feature implemented in the app. Update this file whene
 
 ## App Details & Customization
 
+- **App nickname** — per-app display name override stored in localStorage; click the pencil icon in the detail modal header to enter edit mode and type a new name; blur, Enter, or Escape exits edit mode; a Reset button appears when the nickname differs from the original name; nicknames are shown on cards in both grid and list views
 - **Custom URL** — override the default link for any app with a custom URL
 - **Account email** — optionally record which email you use for each app; shown in the hover tooltip in sky blue; stored locally, never sent to any server
+- **Password hint** — store a personal shorthand only you understand (e.g. "usual", "blue2019!", "work+special") in the app detail modal; shown as a 🔑 line in the hover tooltip in violet; the field intentionally does not store actual passwords
 - **Notes** — add freeform notes to any app; displayed in the card tooltip on hover (amber italic text)
 - **App status** — set each app to Active, Trial, or Cancelled:
   - Active: default, no badge
@@ -58,6 +60,7 @@ A running record of every feature implemented in the app. Update this file whene
 - **Payment badge** — shown on the card for active paid/free apps; hidden for trial and cancelled
 - **Due date label** — shown on the card when a billing date is set
 - **Billing alerts** — pulsing orange dot on the card + orange due date text when payment is due within 7 days (active apps only; trial and cancelled excluded)
+- **Upcoming annual payments section** — a "Due within 30 days" section appears automatically at the top of the hub when any annual subscription is approaching; hidden in select mode
 - **Status-aware totals** — trial and cancelled apps are excluded from all spending stats
 - **Currency selector** — choose from 30+ currencies; amounts displayed consistently throughout
 
@@ -91,6 +94,7 @@ A running record of every feature implemented in the app. Update this file whene
 - **Card properties picker** — click the "Properties" button (sliders icon, next to the view toggle) to show/hide individual fields on list-mode cards; toggles: Brand, Status, Use, Platform, Payment, Method, Due date, Bank; each preference saved across sessions
 - **App cards** — each app shown as a card with its logo, name, payment badge, and status chip
 - **Hover tooltip** — hovering a card shows the app description, payment info, billing date, and notes (if any)
+- **Centered header search** — the "Add an app" search bar is centered in the header (Google-style) and spans the full available width up to a max; the add-app dropdown opens centered under the input
 - **Dark / light mode** — toggle between themes; preference saved across sessions
 - **Responsive layout** — works on mobile and desktop; grid adapts from 3 to 8 columns; header and search bar wrap on small screens
 
@@ -100,6 +104,15 @@ A running record of every feature implemented in the app. Update this file whene
 - **Import** — import a previously exported JSON file to restore or transfer your hub
 - **Share** — generate a read-only share link so others can view your app list (apps and URLs only, no private data)
 
+## Catalog
+
+- **App catalog** — curated list of 100+ popular apps spanning AI, Dev, Design, Marketing, Productivity, Social, Finance, Gaming, Shopping, Telecom, and more
+- **Telecom category** — mobile carrier and telecom apps (e.g. SFR 🇫🇷); added 2026-07-02
+- **Finance category** — all 30 banks from the bank catalog are also browsable as apps (Airwallex, Bank of America, Bluevine, BNP Paribas, Boursobank, Capital One, Chase, Citibank, HSBC, Mercury, N26 Personal, Payoneer, Qonto, Relay, Revolut Business, Revolut Personal, SHINE, Wells Fargo, Wise Business, Wise Personal); plus brokerage apps (Interactive Brokers / IBKR)
+- **Gaming category** — game stores and platforms (Steam, itch.io)
+- **Health category** — gyms and personal care (Fitness Park 🇫🇷, Neat 🇫🇷)
+- **Shopping category** — retail and marketplace apps (Amazon, Apple Store, Carrefour, Shopify…)
+
 ---
 
-*Last updated: 2026-07-02 (v2)*
+*Last updated: 2026-07-03 (v8)*

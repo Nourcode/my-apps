@@ -14,6 +14,101 @@ export type Version = {
 
 const changelog: Version[] = [
   {
+    version: "2026.07.03.2",
+    date: "2026-07-03",
+    label: "Header & Name Edit Polish",
+    groups: [
+      {
+        category: "Improved",
+        items: [
+          "Add-app search bar is now centered in the header (Google-style) and wider, spanning the full available space up to a max width",
+          "App name edit now requires clicking the pencil icon to activate — name is read-only by default, becomes an input on click; blur or Enter/Escape exits edit mode",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.03.1",
+    date: "2026-07-03",
+    label: "App Nicknames",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Nickname — click the app name directly in its detail modal to rename it; a 'Reset' button appears when the name differs from the original; nickname is shown on the card in both grid and list views; saved across sessions and included in export/import",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.03",
+    date: "2026-07-03",
+    label: "Catalog Expansion",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "9 new apps: Modal (AI), NordVPN + GoDaddy + Squarespace (Dev), Reddit + Bumble + Hinge + Pornhub (Social), Google Domains (Productivity)",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.7",
+    date: "2026-07-02",
+    label: "Upcoming Payments & Catalog Expansion",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Upcoming annual payments section — a 'Due within 30 days' banner appears automatically above Pinned when any annual subscription is coming up, so nothing slips through",
+          "17 new apps across AI (Midjourney), Shopping (Reiss), Learning (Udemy, Ornikar), Food (PedidosYa, Colombus Café, Starbucks, Subway), Travel (YeSim, Nouvelair, Tunisair, Airbnb, Bolt Rides, RATP), Telecom (MobileRecharge), new Health category (Fitness Park, Neat)",
+          "Payment amount validation — saving a Paid app without an amount now shows a toast and scrolls to the field",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.6",
+    date: "2026-07-02",
+    label: "Travel & Finance Expansion",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "2 new Travel apps: Holafly (eSIM), Skyscanner (flight & hotel search)",
+          "10 new banks: Dukascopy 🇨🇭, First Finance Bank 🇺🇸, FV Bank 🇺🇸, GrabFi, Jeeves 🇺🇸, Nubank 🇧🇷, OneSafe 🇺🇸, Ugly.cash, Utoppia 🇺🇸, Zenus Bank 🇺🇸",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.5",
+    date: "2026-07-02",
+    label: "Password Hints",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Password hint field — store a personal shorthand only you understand (e.g. 'usual', 'work+special') in each app's detail modal; shown as a 🔑 line in the hover tooltip; never store the actual password here",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.02.4",
+    date: "2026-07-02",
+    label: "Catalog Expansion",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "4 new apps: Apple Store (Shopping), itch.io (Gaming), Interactive Brokers (Finance), SFR (new Telecom category 🇫🇷)",
+        ],
+      },
+    ],
+  },
+  {
     version: "2026.07.02.3",
     date: "2026-07-02",
     label: "Finance Category & Settings Polish",

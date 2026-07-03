@@ -1,9 +1,36 @@
 
 Feature suggestions
+New apps to add:
+New banks to add: 
 
-Swap "sharing and data" with "account" sections order in the settings. 
-Add all the banks as apps as well (we use them for payment be also have to install them or connect to them).
+private app feature
+hidden amount feature
+x button in the search to delete what's typed
+list of payments instead of one payment per app
+edit name
+bot assistant with RAG
+API integrations with n8n
 
-New apps to add: SFR (french app for mobile), Interactive Brokers, itch.io
+automation to open upwork every hour.
 
 Recommended agents or skills and mcps.
+
+For where Helio is right now, three stand out as genuinely useful — the rest would be overkill:
+
+1. Puppeteer MCP (most valuable right now)
+I can run tsc --noEmit to catch type errors, but I can't actually open the app and click through it. A Puppeteer MCP would let me verify that a button actually works, a modal opens, a card renders correctly — instead of having to ask you to check every time. This would close the biggest gap in how I work on your app.
+
+2. Vercel MCP
+You deploy on Vercel. With the Vercel MCP I could check build status, read deployment logs when something breaks, and confirm a deploy succeeded — all without you having to open the Vercel dashboard and paste errors back to me.
+
+3. GitHub MCP
+Right now you handle git commits and pushes manually. The GitHub MCP would let me create commits, open PRs, and read CI results directly. Useful if the project grows and you want proper pull request history — less so while it's just you iterating fast.
+
+Skills you already have that are underused:
+
+/code-review ultra — runs a multi-agent cloud review of your branch. Worth running before a big release to catch things I'd miss in a fast feature session. You haven't used it yet.
+My honest take: Puppeteer MCP would change how I work with you the most. Right now every UI change is "trust me" — with browser automation I could actually verify it before saying done.
+
+
+What if something is both personal and business. 
+If you work with me, these are included:  - Daily updates. - Weekly calls. - Technical documentation (PDF or other options of your choice).   Let me know when you are available for a call, have a good day!

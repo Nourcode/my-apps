@@ -234,6 +234,25 @@ function ExternalLinkIcon() {
   );
 }
 
+function PencilIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+    </svg>
+  );
+}
+
+function BellIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </svg>
+  );
+}
+
 function PinIcon({ size = 14, filled = false }: { size?: number; filled?: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -340,6 +359,7 @@ export default function Home() {
   const [editing, setEditing] = useState<string | null>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [payTypeDraft, setPayTypeDraft] = useState<"free" | "paid">("free");
+  const [amountError, setAmountError] = useState(false);
   const [payAmountDraft, setPayAmountDraft] = useState("");
   const [payPeriodDraft, setPayPeriodDraft] = useState<PaymentPeriod>("monthly");
   const [payDayDraft, setPayDayDraft] = useState("");
@@ -362,6 +382,11 @@ export default function Home() {
   const [notesDraft, setNotesDraft] = useState("");
   const [emails, setEmails] = useState<Record<string, string>>({});
   const [emailDraft, setEmailDraft] = useState("");
+  const [hints, setHints] = useState<Record<string, string>>({});
+  const [hintDraft, setHintDraft] = useState("");
+  const [nicknames, setNicknames] = useState<Record<string, string>>({});
+  const [nicknameDraft, setNicknameDraft] = useState("");
+  const [nameEditMode, setNameEditMode] = useState(false);
   const [emailList, setEmailList] = useState<string[]>([]);
   const [newEmailInput, setNewEmailInput] = useState("");
   const [activeEmailFilter, setActiveEmailFilter] = useState<string | null>(null);
@@ -426,6 +451,10 @@ export default function Home() {
     if (savedUses) setUses(JSON.parse(savedUses));
     const savedEmails = localStorage.getItem("app-emails");
     if (savedEmails) setEmails(JSON.parse(savedEmails));
+    const savedHints = localStorage.getItem("app-hints");
+    if (savedHints) setHints(JSON.parse(savedHints));
+    const savedNicknames = localStorage.getItem("app-nicknames");
+    if (savedNicknames) setNicknames(JSON.parse(savedNicknames));
     const savedEmailList = localStorage.getItem("app-email-list");
     if (savedEmailList) setEmailList(JSON.parse(savedEmailList));
     const savedPlatforms = localStorage.getItem("app-platforms");
@@ -522,6 +551,8 @@ export default function Home() {
         use: uses[app.name] ?? "personal",
         email: emails[app.name] ?? null,
         platform: platforms[app.name] ?? "desktop",
+        hint: hints[app.name] ?? null,
+        nickname: nicknames[app.name] ?? null,
       }));
     const blob = new Blob([JSON.stringify({ currency, emailList, apps: myApps }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -618,6 +649,8 @@ export default function Home() {
         const newUsesImp: AppUses = {};
         const newEmailsImp: Record<string, string> = {};
         const newPlatformsImp: Record<string, AppPlatform> = {};
+        const newHintsImp: Record<string, string> = {};
+        const newNicknamesImp: Record<string, string> = {};
         for (const item of data) {
           const catalogApp = catalog.find((a) => a.name === item.name);
           if (!catalogApp) continue;
@@ -632,6 +665,8 @@ export default function Home() {
           if (item.use === "business") newUsesImp[item.name] = "business";
           if (item.email) newEmailsImp[item.name] = item.email;
           if (item.platform === "mobile" || item.platform === "both") newPlatformsImp[item.name] = item.platform;
+          if (item.hint) newHintsImp[item.name] = item.hint;
+          if (item.nickname) newNicknamesImp[item.name] = item.nickname;
         }
         if (!Array.isArray(raw) && raw.currency) changeCurrency(raw.currency);
         if (!Array.isArray(raw) && Array.isArray(raw.emailList)) {
@@ -649,6 +684,8 @@ export default function Home() {
         setUses(newUsesImp);
         setEmails(newEmailsImp);
         setPlatforms(newPlatformsImp);
+        setHints(newHintsImp);
+        setNicknames(newNicknamesImp);
         localStorage.setItem("my-app-list", JSON.stringify(validNames));
         localStorage.setItem("custom-urls", JSON.stringify(newUrls));
         localStorage.setItem("app-payments", JSON.stringify(newPayments));
@@ -660,6 +697,8 @@ export default function Home() {
         localStorage.setItem("app-uses", JSON.stringify(newUsesImp));
         localStorage.setItem("app-emails", JSON.stringify(newEmailsImp));
         localStorage.setItem("app-platforms", JSON.stringify(newPlatformsImp));
+        localStorage.setItem("app-hints", JSON.stringify(newHintsImp));
+        localStorage.setItem("app-nicknames", JSON.stringify(newNicknamesImp));
         showToast(`Imported ${validNames.length} app${validNames.length !== 1 ? "s" : ""}!`);
       } catch {
         showToast("Invalid file — import failed.");
@@ -688,6 +727,7 @@ export default function Home() {
       setUses({});
       setEmails({});
       setPlatforms({});
+      setHints({});
       localStorage.setItem("my-app-list", JSON.stringify([]));
       localStorage.removeItem("custom-urls");
       localStorage.removeItem("app-payments");
@@ -699,6 +739,9 @@ export default function Home() {
       localStorage.removeItem("app-uses");
       localStorage.removeItem("app-emails");
       localStorage.removeItem("app-platforms");
+      localStorage.removeItem("app-hints");
+      setNicknames({});
+      localStorage.removeItem("app-nicknames");
 
     } else if (deleteTarget.type === "category" && deleteTarget.tag) {
       const toRemove = new Set(
@@ -721,7 +764,9 @@ export default function Home() {
       const updatedUsesSel = { ...uses };
       const updatedEmailsSel = { ...emails };
       const updatedPlatformsSel = { ...platforms };
-      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; delete updatedPlatformsSel[n]; });
+      const updatedHintsSel = { ...hints };
+      const updatedNicknamesSel = { ...nicknames };
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; delete updatedPlatformsSel[n]; delete updatedHintsSel[n]; delete updatedNicknamesSel[n]; });
       setMyAppNames(updated);
       setCustomUrls(updatedUrls);
       setPayments(updatedPayments);
@@ -733,6 +778,8 @@ export default function Home() {
       setUses(updatedUsesSel);
       setEmails(updatedEmailsSel);
       setPlatforms(updatedPlatformsSel);
+      setHints(updatedHintsSel);
+      setNicknames(updatedNicknamesSel);
       localStorage.setItem("my-app-list", JSON.stringify(updated));
       localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
       localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
@@ -744,6 +791,8 @@ export default function Home() {
       localStorage.setItem("app-uses", JSON.stringify(updatedUsesSel));
       localStorage.setItem("app-emails", JSON.stringify(updatedEmailsSel));
       localStorage.setItem("app-platforms", JSON.stringify(updatedPlatformsSel));
+      localStorage.setItem("app-hints", JSON.stringify(updatedHintsSel));
+      localStorage.setItem("app-nicknames", JSON.stringify(updatedNicknamesSel));
       setSelectedApps(new Set());
       setSelectMode(false);
     }
@@ -790,6 +839,10 @@ export default function Home() {
     delete updatedEmailsDel[name];
     const updatedPlatformsDel = { ...platforms };
     delete updatedPlatformsDel[name];
+    const updatedHintsDel = { ...hints };
+    delete updatedHintsDel[name];
+    const updatedNicknamesDel = { ...nicknames };
+    delete updatedNicknamesDel[name];
     setMyAppNames(updated);
     setCustomUrls(updatedUrls);
     setPayments(updatedPayments);
@@ -801,6 +854,8 @@ export default function Home() {
     setUses(updatedUsesDel);
     setEmails(updatedEmailsDel);
     setPlatforms(updatedPlatformsDel);
+    setHints(updatedHintsDel);
+    setNicknames(updatedNicknamesDel);
     localStorage.setItem("my-app-list", JSON.stringify(updated));
     localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
@@ -812,6 +867,8 @@ export default function Home() {
     localStorage.setItem("app-uses", JSON.stringify(updatedUsesDel));
     localStorage.setItem("app-emails", JSON.stringify(updatedEmailsDel));
     localStorage.setItem("app-platforms", JSON.stringify(updatedPlatformsDel));
+    localStorage.setItem("app-hints", JSON.stringify(updatedHintsDel));
+    localStorage.setItem("app-nicknames", JSON.stringify(updatedNicknamesDel));
     setEditing(null);
   }
 
@@ -821,6 +878,7 @@ export default function Home() {
     setUrlDraft(customUrls[name] ?? catalog.find((a) => a.name === name)?.url ?? "");
     setPayTypeDraft(pay?.type ?? "free");
     setPayAmountDraft(pay?.amount ?? "");
+    setAmountError(false);
     setPayPeriodDraft(pay?.period ?? "monthly");
     setPayDayDraft(pay?.day ? String(pay.day) : "");
     setPayMonthDraft(pay?.month ? String(pay.month) : "");
@@ -831,6 +889,10 @@ export default function Home() {
     setShowEmailPicker(false);
     setNotesDraft(notes[name] ?? "");
     setEmailDraft(emails[name] ?? "");
+    setHintDraft(hints[name] ?? "");
+    const originalName = catalog.find((a) => a.name === name)?.name ?? name;
+    setNicknameDraft(nicknames[name] ?? originalName);
+    setNameEditMode(false);
     setStatusDraft(statuses[name] ?? "active");
     setUseDraft(uses[name] ?? "personal");
     setPlatformDraft(platforms[name] ?? "desktop");
@@ -865,6 +927,12 @@ export default function Home() {
 
   function saveEdit() {
     if (!editing) return;
+    if (payTypeDraft === "paid" && !payAmountDraft.trim()) {
+      setAmountError(true);
+      showToast("Enter a payment amount before saving.");
+      document.getElementById("pay-amount-input")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const updatedUrls = { ...customUrls, [editing]: urlDraft };
     setCustomUrls(updatedUrls);
     localStorage.setItem("custom-urls", JSON.stringify(updatedUrls));
@@ -900,6 +968,23 @@ export default function Home() {
     }
     setEmails(updatedEmails);
     localStorage.setItem("app-emails", JSON.stringify(updatedEmails));
+    const updatedHints = { ...hints };
+    if (hintDraft.trim()) {
+      updatedHints[editing] = hintDraft.trim();
+    } else {
+      delete updatedHints[editing];
+    }
+    setHints(updatedHints);
+    localStorage.setItem("app-hints", JSON.stringify(updatedHints));
+    const updatedNicknames = { ...nicknames };
+    const trimmedNick = nicknameDraft.trim();
+    if (trimmedNick && trimmedNick !== editing) {
+      updatedNicknames[editing] = trimmedNick;
+    } else {
+      delete updatedNicknames[editing];
+    }
+    setNicknames(updatedNicknames);
+    localStorage.setItem("app-nicknames", JSON.stringify(updatedNicknames));
     const updatedStatuses = { ...statuses };
     if (statusDraft === "active") {
       delete updatedStatuses[editing];
@@ -1001,6 +1086,15 @@ export default function Home() {
 
   const hasBusinessApps = myAppNames.some((n) => uses[n] === "business");
 
+  const upcomingAnnual = myAppNames.filter((name) => {
+    const pay = payments[name];
+    const st = statuses[name];
+    if (!pay || pay.type !== "paid" || pay.period !== "annually") return false;
+    if (st === "trial" || st === "cancelled") return false;
+    const days = getDaysUntilDue(pay);
+    return days !== null && days >= 0 && days <= 30;
+  });
+
   // Stats — only active apps count (trial = not paying yet, cancelled = no longer paying)
   let statsMonthly = 0;
   let statsAnnual = 0;
@@ -1036,7 +1130,7 @@ export default function Home() {
 
       {/* Header */}
       <div className={`-mx-4 sm:-mx-10 px-4 sm:px-10 py-3 mb-6 border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
-      <div className="flex items-center justify-between gap-4">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
         <div className="flex items-center gap-2.5">
           <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-amber-500 ${d ? "bg-amber-500/10" : "bg-amber-50"}`}>
             <SunIcon size={15} />
@@ -1047,12 +1141,9 @@ export default function Home() {
             {changelog[0].version}
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Add app autocomplete search */}
-          <div className="relative">
-            <svg className={`absolute left-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500" : "text-gray-400"}`} xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+        {/* Add app autocomplete search — centered */}
+        <div className="flex justify-center">
+          <div className="relative w-full max-w-lg">
             <input
               type="text"
               placeholder="Add an app…"
@@ -1061,10 +1152,15 @@ export default function Home() {
               onFocus={() => setShowAddDropdown(true)}
               onBlur={() => setTimeout(() => setShowAddDropdown(false), 150)}
               onKeyDown={(e) => e.key === "Escape" && (setAddSearch(""), setShowAddDropdown(false), (e.target as HTMLInputElement).blur())}
-              className={`pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none border transition-colors w-72 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+              className={`pl-4 py-2.5 rounded-xl text-sm outline-none border transition-colors w-full ${addSearch ? "pr-8" : "pr-3"} ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
             />
+            {addSearch && (
+              <button onClick={() => setAddSearch("")} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
             {showAddDropdown && (
-              <div className={`absolute top-full right-0 mt-1.5 w-96 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+              <div className={`absolute top-full left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
                 {!addSearch.trim() ? (
                   /* Empty / focused state — browse prompt */
                   <button
@@ -1114,6 +1210,9 @@ export default function Home() {
               </div>
             )}
           </div>
+        </div>
+        {/* Right: action buttons */}
+        <div className="flex items-center gap-2">
           {/* Share */}
           <button onClick={shareApps} title="Share hub"
             className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-medium transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
@@ -1158,9 +1257,15 @@ export default function Home() {
               onKeyDown={(e) => e.key === "Escape" && (setSearch(""), (e.target as HTMLInputElement).blur())}
               className={`pl-8 pr-12 py-1.5 rounded-xl text-sm outline-none border transition-colors w-40 ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
             />
-            <kbd className={`absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
-              {isMac ? <><span>⌘</span><span>K</span></> : <><span>Ctrl</span><span>K</span></>}
-            </kbd>
+            {search ? (
+              <button onClick={() => setSearch("")} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            ) : (
+              <kbd className={`absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] font-medium pointer-events-none select-none ${d ? "text-gray-600" : "text-gray-300"}`}>
+                {isMac ? <><span>⌘</span><span>K</span></> : <><span>Ctrl</span><span>K</span></>}
+              </kbd>
+            )}
           </div>
           {/* Select mode */}
           <button onClick={() => { exitSelectMode(); setSelectMode(true); }} title="Select apps"
@@ -1359,7 +1464,7 @@ export default function Home() {
           {filteredApps.map((app) => (
             <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
               payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-              bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
+              bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} nickname={nicknames[app.name]} d={d}
               selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
               onOpen={() => openAppDetail(app.name)}
               onToggleSelect={() => toggleSelect(app.name)}
@@ -1371,6 +1476,31 @@ export default function Home() {
         </div>
       ) : (
         <div className="flex flex-col gap-10">
+          {/* Upcoming annual payments — shown when any annual subscription is due within 30 days */}
+          {upcomingAnnual.length > 0 && !selectMode && (
+            <section>
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="text-orange-400"><BellIcon size={12} /></span>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-orange-400">Due within 30 days</h2>
+              </div>
+              <div className={gridCls}>
+                {upcomingAnnual.map((name) => {
+                  const app = myApps.find((a) => a.name === name);
+                  if (!app) return null;
+                  return (
+                    <AppCard key={name} app={app} url={customUrls[name] ?? app.url}
+                      payment={payments[name]} currency={currency} notes={notes[name]} status={statuses[name]}
+                      bank={bankAssignments[name]} use={uses[name]} platform={platforms[name]} email={emails[name]} hint={hints[name]} nickname={nicknames[name]} d={d}
+                      selectMode={false} isSelected={false} viewMode={viewMode} cardProps={cardProps}
+                      onOpen={() => openAppDetail(name)}
+                      onToggleSelect={() => {}}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* Pinned section — shown before categories when at least one hub app is pinned */}
           {myApps.some((a) => pinnedApps.has(a.name)) && (
             <section>
@@ -1382,7 +1512,7 @@ export default function Home() {
                 {myApps.filter((a) => pinnedApps.has(a.name)).map((app) => (
                   <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                     payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-                    bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} pinned d={d}
+                    bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} pinned d={d}
                     selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
                     onOpen={() => openAppDetail(app.name)}
                     onToggleSelect={() => toggleSelect(app.name)}
@@ -1410,7 +1540,7 @@ export default function Home() {
                   {myApps.filter((a) => primaryTagForApp.get(a.name) === tag).map((app) => (
                     <AppCard key={app.name} app={app} url={customUrls[app.name] ?? app.url}
                       payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
-                      bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} d={d}
+                      bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} nickname={nicknames[app.name]} d={d}
                       selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
@@ -1471,31 +1601,64 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => setEditing(null)}>
           <div className={`rounded-2xl p-6 w-full max-w-xs shadow-2xl border max-h-[90vh] overflow-y-auto ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`} onClick={(e) => e.stopPropagation()}>
 
-            {/* App identity + Visit */}
-            <div className="flex items-center gap-3 mb-6">
+            {/* App identity */}
+            <div className="flex items-start gap-3 mb-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={editingApp.icon} alt={editingApp.name} className="w-11 h-11 rounded-xl flex-shrink-0" />
+              <img src={editingApp.icon} alt={editingApp.name} className="w-11 h-11 rounded-xl flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-base">{editingApp.name}</div>
-                <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>{editingApp.brand}</div>
-                <div className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>
-                  {lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}
+                {/* Name row — full width */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {nameEditMode ? (
+                    <input
+                      autoFocus
+                      value={nicknameDraft}
+                      onChange={(e) => setNicknameDraft(e.target.value)}
+                      onBlur={() => setNameEditMode(false)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") setNameEditMode(false); }}
+                      className={`font-semibold text-base bg-transparent outline-none border-b border-current flex-1 min-w-0 ${d ? "text-white" : "text-gray-900"}`}
+                    />
+                  ) : (
+                    <span className={`font-semibold text-base truncate flex-1 min-w-0 ${d ? "text-white" : "text-gray-900"}`}>{nicknameDraft}</span>
+                  )}
+                  <button
+                    onClick={() => setNameEditMode(true)}
+                    title="Edit name"
+                    className={`flex-shrink-0 transition-colors ${d ? "text-gray-600 hover:text-gray-400" : "text-gray-300 hover:text-gray-500"}`}
+                  >
+                    <PencilIcon size={11} />
+                  </button>
+                  {nicknameDraft !== editingApp.name && (
+                    <button onClick={() => setNicknameDraft(editingApp.name)}
+                      title="Reset to original name"
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 transition-colors ${d ? "bg-white/10 text-gray-400 hover:text-gray-200" : "bg-gray-100 text-gray-400 hover:text-gray-600"}`}>
+                      Reset
+                    </button>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => togglePin(editing!)}
-                  title={pinnedApps.has(editing!) ? "Unpin" : "Pin to top"}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-                    pinnedApps.has(editing!)
-                      ? "bg-amber-500/15 text-amber-500"
-                      : d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
-                  }`}>
-                  <PinIcon size={14} filled={pinnedApps.has(editing!)} />
-                </button>
-                <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
-                  Visit <ExternalLinkIcon />
-                </a>
+                {/* Meta + action row */}
+                <div className="flex items-center justify-between gap-2 mt-1.5">
+                  <div className="min-w-0">
+                    <div className={`text-xs ${d ? "text-gray-500" : "text-gray-400"}`}>{editingApp.brand}</div>
+                    <div className={`text-[11px] mt-0.5 ${d ? "text-gray-600" : "text-gray-400"}`}>
+                      {lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={() => togglePin(editing!)}
+                      title={pinnedApps.has(editing!) ? "Unpin" : "Pin to top"}
+                      className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                        pinnedApps.has(editing!)
+                          ? "bg-amber-500/15 text-amber-500"
+                          : d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                      }`}>
+                      <PinIcon size={14} filled={pinnedApps.has(editing!)} />
+                    </button>
+                    <a href={customUrls[editing!] ?? editingApp.url} target="_blank" rel="noopener noreferrer"
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"}`}>
+                      Visit <ExternalLinkIcon />
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1613,7 +1776,7 @@ export default function Home() {
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-2 ${d ? "text-gray-500" : "text-gray-400"}`}>Payment</p>
             <div className="flex gap-2 mb-3">
               {(["free", "paid"] as const).map((t) => (
-                <button key={t} onClick={() => setPayTypeDraft(t)}
+                <button key={t} onClick={() => { setPayTypeDraft(t); setAmountError(false); }}
                   className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors capitalize ${
                     payTypeDraft === t
                       ? t === "free" ? "bg-green-500 text-white" : "bg-amber-500 text-white"
@@ -1628,14 +1791,17 @@ export default function Home() {
               <div className="flex flex-col gap-2">
                 <div className="relative">
                   <input
-                    type="text" inputMode="decimal" placeholder="9.99" value={payAmountDraft}
-                    onChange={(e) => setPayAmountDraft(e.target.value.replace(/[^0-9.,]/g, ""))}
-                    className={`${inputCls} pr-12`}
+                    id="pay-amount-input" type="text" inputMode="decimal" placeholder="9.99" value={payAmountDraft}
+                    onChange={(e) => { setPayAmountDraft(e.target.value.replace(/[^0-9.,]/g, "")); setAmountError(false); }}
+                    className={`${inputCls} pr-12 ${amountError ? "border-red-400 focus:border-red-400" : ""}`}
                   />
                   <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none ${d ? "text-gray-500" : "text-gray-400"}`}>
                     {currency}
                   </span>
                 </div>
+                {amountError && (
+                  <p className="text-xs text-red-400 -mt-1">Enter an amount to save.</p>
+                )}
                 <div className="flex gap-2 pt-1">
                   {([
                     { value: "monthly", label: "Monthly" },
@@ -1758,15 +1924,20 @@ export default function Home() {
                   return (
                     <div className={`mt-1 rounded-xl border overflow-hidden shadow-lg ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
                       {/* Search input */}
-                      <div className={`px-3 py-2 border-b ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+                      <div className={`px-3 py-2 border-b flex items-center gap-2 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
                         <input
                           type="text"
                           autoFocus
                           placeholder="Search banks…"
                           value={bankSearch}
                           onChange={(e) => setBankSearch(e.target.value)}
-                          className={`w-full text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+                          className={`flex-1 text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
                         />
+                        {bankSearch && (
+                          <button onClick={() => setBankSearch("")} className={`flex-shrink-0 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        )}
                       </div>
                       {/* Scrollable list */}
                       <div className="max-h-52 overflow-y-auto">
@@ -1804,6 +1975,17 @@ export default function Home() {
                 )}
               </div>
             )}
+
+            {/* Password hint */}
+            <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Password Hint</p>
+            <input
+              type="text"
+              value={hintDraft}
+              onChange={(e) => setHintDraft(e.target.value)}
+              placeholder="e.g. usual, blue2019!, work+special"
+              className={`w-full text-sm rounded-xl px-3 py-2.5 outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+            />
+            <p className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>A personal reminder only you understand — never store the actual password.</p>
 
             {/* Notes */}
             <p className={`text-xs font-semibold uppercase tracking-wider mt-5 mb-1.5 ${d ? "text-gray-500" : "text-gray-400"}`}>Notes</p>
@@ -2020,8 +2202,13 @@ export default function Home() {
                   type="text" placeholder="Search apps, brands, categories…"
                   value={addModalSearch} onChange={(e) => setAddModalSearch(e.target.value)}
                   autoFocus
-                  className={`pl-8 pr-3 py-2 w-full rounded-xl text-sm outline-none border transition-colors ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+                  className={`pl-8 py-2 w-full rounded-xl text-sm outline-none border transition-colors ${addModalSearch ? "pr-8" : "pr-3"} ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-gray-50 border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
                 />
+                {addModalSearch && (
+                  <button onClick={() => setAddModalSearch("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
               </div>
             )}
 
@@ -2071,15 +2258,20 @@ export default function Home() {
                 ✕
               </button>
             </div>
-            <div className={`px-3 py-2 border-b flex-shrink-0 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
+            <div className={`px-3 py-2 border-b flex-shrink-0 flex items-center gap-2 ${d ? "border-white/10" : "border-black/[0.06]"}`}>
               <input
                 type="text"
                 autoFocus
                 placeholder="Search currencies…"
                 value={currencySearch}
                 onChange={(e) => setCurrencySearch(e.target.value)}
-                className={`w-full text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+                className={`flex-1 text-sm outline-none bg-transparent ${d ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
               />
+              {currencySearch && (
+                <button onClick={() => setCurrencySearch("")} className={`flex-shrink-0 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto">
               {CURRENCIES.filter((c) =>
@@ -2286,8 +2478,8 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, d, selectMode, isSelected, viewMode, cardProps, onOpen, onToggleSelect }: {
-  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; d: boolean;
+function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, hint, nickname, d, selectMode, isSelected, viewMode, cardProps, onOpen, onToggleSelect }: {
+  app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; hint?: string; nickname?: string; d: boolean;
   selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
@@ -2328,6 +2520,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
             <div>{app.description}</div>
             {tooltipMeta && <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>}
             {email && <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>}
+            {hint && <div className="mt-1.5 text-[11px] border-t border-white/10 pt-1.5 text-violet-400">🔑 {hint}</div>}
             {notes && <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>}
             <div className={`absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent ${d ? "border-t-gray-800" : "border-t-gray-900"}`} />
           </div>
@@ -2339,7 +2532,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
 
           {/* Name + inline indicators */}
           <div className="flex items-center justify-center gap-1 w-full px-1">
-            <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+            <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 ${d ? "text-gray-100" : "text-gray-800"}`}>{nickname ?? app.name}</span>
             {!selectMode && pinned && <span className="text-amber-500 flex-shrink-0"><PinIcon size={8} filled /></span>}
             {!selectMode && dueSoon && <span className="w-1 h-1 rounded-full bg-orange-400 animate-pulse flex-shrink-0" />}
           </div>
@@ -2416,6 +2609,9 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
           {email && (
             <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>
           )}
+          {hint && (
+            <div className="mt-1.5 text-[11px] border-t border-white/10 pt-1.5 text-violet-400">🔑 {hint}</div>
+          )}
           {notes && (
             <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>
           )}
@@ -2432,7 +2628,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
         {/* Left: name, brand, chips */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className={`text-sm font-semibold truncate ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+            <span className={`text-sm font-semibold truncate ${d ? "text-gray-100" : "text-gray-800"}`}>{nickname ?? app.name}</span>
             {!selectMode && pinned && <span className="text-amber-500 flex-shrink-0"><PinIcon size={10} filled /></span>}
             {dueSoon && !selectMode && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse flex-shrink-0" />}
           </div>
