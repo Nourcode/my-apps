@@ -1,13 +1,12 @@
 
 Feature suggestions
-New apps to add:
+New apps to add: Hubspot, tally.so, Netflix, communauto (autopartage en france), citiz (autopartage en france), kindle, Google authenticator, Charles Schwab, Binance (crypto), Meta (facebook), copilot.money
 New banks to add: 
 
-private app feature
-hidden amount feature
-x button in the search to delete what's typed
+Add when app was added info (date/ added at).
+
+dashboard to show some data (percentage of apps that are paid, canceled, etc...)
 list of payments instead of one payment per app
-edit name
 bot assistant with RAG
 API integrations with n8n
 
@@ -33,4 +32,3 @@ My honest take: Puppeteer MCP would change how I work with you the most. Right n
 
 
 What if something is both personal and business. 
-If you work with me, these are included:  - Daily updates. - Weekly calls. - Technical documentation (PDF or other options of your choice).   Let me know when you are available for a call, have a good day!

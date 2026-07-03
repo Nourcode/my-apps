@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import catalog, { type App } from "./catalog";
 import bankCatalog from "./banks";
 import changelog from "./changelog";
@@ -253,6 +254,36 @@ function BellIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+function LockIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  );
+}
+
+function EyeIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function EyeOffIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+}
+
 function PinIcon({ size = 14, filled = false }: { size?: number; filled?: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -322,14 +353,14 @@ function getDaysUntilDue(payment: Payment): number | null {
 
 // ─── Payment badge ────────────────────────────────────────────────────────────
 
-function PaymentBadge({ payment, currency, d }: { payment: Payment; currency: string; d: boolean }) {
+function PaymentBadge({ payment, currency, d, blur }: { payment: Payment; currency: string; d: boolean; blur?: boolean }) {
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
       payment.type === "free"
         ? d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-600"
         : d ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"
     }`}>
-      {paymentLabel(payment, currency)}
+      {blur ? <span className="blur-sm select-none">{paymentLabel(payment, currency)}</span> : paymentLabel(payment, currency)}
     </span>
   );
 }
@@ -387,6 +418,8 @@ export default function Home() {
   const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [nameEditMode, setNameEditMode] = useState(false);
+  const [hiddenApps, setHiddenApps] = useState<Set<string>>(new Set());
+  const [blurAmounts, setBlurAmounts] = useState(false);
   const [emailList, setEmailList] = useState<string[]>([]);
   const [newEmailInput, setNewEmailInput] = useState("");
   const [activeEmailFilter, setActiveEmailFilter] = useState<string | null>(null);
@@ -396,6 +429,7 @@ export default function Home() {
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const importInputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const addInputRef = useRef<HTMLInputElement>(null);
   const [isDark, setIsDark] = useState(false);
   const [isMac, setIsMac] = useState(false);
 
@@ -426,6 +460,7 @@ export default function Home() {
   const [addSearch, setAddSearch] = useState("");
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [lastEdited, setLastEdited] = useState<Record<string, string>>({});
+  const [addedAt, setAddedAt] = useState<Record<string, string>>({});
   const [pinnedApps, setPinnedApps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -443,6 +478,8 @@ export default function Home() {
     if (savedStatuses) setStatuses(JSON.parse(savedStatuses));
     const savedLastEdited = localStorage.getItem("app-last-edited");
     if (savedLastEdited) setLastEdited(JSON.parse(savedLastEdited));
+    const savedAddedAt = localStorage.getItem("app-added-at");
+    if (savedAddedAt) setAddedAt(JSON.parse(savedAddedAt));
     const savedBanks = localStorage.getItem("app-banks");
     if (savedBanks) setBankAssignments(JSON.parse(savedBanks));
     const savedPinned = localStorage.getItem("app-pinned");
@@ -455,6 +492,8 @@ export default function Home() {
     if (savedHints) setHints(JSON.parse(savedHints));
     const savedNicknames = localStorage.getItem("app-nicknames");
     if (savedNicknames) setNicknames(JSON.parse(savedNicknames));
+    const savedHidden = localStorage.getItem("app-hidden");
+    if (savedHidden) setHiddenApps(new Set(JSON.parse(savedHidden)));
     const savedEmailList = localStorage.getItem("app-email-list");
     if (savedEmailList) setEmailList(JSON.parse(savedEmailList));
     const savedPlatforms = localStorage.getItem("app-platforms");
@@ -486,6 +525,15 @@ export default function Home() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
+
+  function pickLucky() {
+    const available = catalog.filter(a => !myAppNames.includes(a.name));
+    if (available.length === 0) return;
+    const pick = available[Math.floor(Math.random() * available.length)];
+    setAddSearch(pick.name);
+    setShowAddDropdown(true);
+    addInputRef.current?.focus();
+  }
 
   function showToast(msg: string) {
     setToast(msg);
@@ -546,6 +594,7 @@ export default function Home() {
         notes: notes[app.name] ?? null,
         status: statuses[app.name] ?? null,
         lastEdited: lastEdited[app.name] ?? null,
+        addedAt: addedAt[app.name] ?? null,
         bank: bankAssignments[app.name] ?? null,
         pinned: pinnedApps.has(app.name),
         use: uses[app.name] ?? "personal",
@@ -644,6 +693,7 @@ export default function Home() {
         const newNotes: Record<string, string> = {};
         const newStatuses: Statuses = {};
         const newLastEdited: Record<string, string> = {};
+        const newAddedAt: Record<string, string> = {};
         const newBankAssignments: BankAssignments = {};
         const newPinned = new Set<string>();
         const newUsesImp: AppUses = {};
@@ -660,6 +710,7 @@ export default function Home() {
           if (item.notes) newNotes[item.name] = item.notes;
           if (item.status) newStatuses[item.name] = item.status;
           if (item.lastEdited) newLastEdited[item.name] = item.lastEdited;
+          if (item.addedAt) newAddedAt[item.name] = item.addedAt;
           if (item.bank) newBankAssignments[item.name] = item.bank;
           if (item.pinned) newPinned.add(item.name);
           if (item.use === "business") newUsesImp[item.name] = "business";
@@ -679,6 +730,7 @@ export default function Home() {
         setNotes(newNotes);
         setStatuses(newStatuses);
         setLastEdited(newLastEdited);
+        setAddedAt(newAddedAt);
         setBankAssignments(newBankAssignments);
         setPinnedApps(newPinned);
         setUses(newUsesImp);
@@ -692,6 +744,7 @@ export default function Home() {
         localStorage.setItem("app-notes", JSON.stringify(newNotes));
         localStorage.setItem("app-statuses", JSON.stringify(newStatuses));
         localStorage.setItem("app-last-edited", JSON.stringify(newLastEdited));
+        localStorage.setItem("app-added-at", JSON.stringify(newAddedAt));
         localStorage.setItem("app-banks", JSON.stringify(newBankAssignments));
         localStorage.setItem("app-pinned", JSON.stringify([...newPinned]));
         localStorage.setItem("app-uses", JSON.stringify(newUsesImp));
@@ -722,6 +775,7 @@ export default function Home() {
       setNotes({});
       setStatuses({});
       setLastEdited({});
+      setAddedAt({});
       setBankAssignments({});
       setPinnedApps(new Set());
       setUses({});
@@ -734,6 +788,7 @@ export default function Home() {
       localStorage.removeItem("app-notes");
       localStorage.removeItem("app-statuses");
       localStorage.removeItem("app-last-edited");
+      localStorage.removeItem("app-added-at");
       localStorage.removeItem("app-banks");
       localStorage.removeItem("app-pinned");
       localStorage.removeItem("app-uses");
@@ -759,6 +814,7 @@ export default function Home() {
       const updatedNotes = { ...notes };
       const updatedStatuses = { ...statuses };
       const updatedLastEdited = { ...lastEdited };
+      const updatedAddedAtSel = { ...addedAt };
       const updatedBankAssignments = { ...bankAssignments };
       const updatedPinnedSel = new Set(pinnedApps);
       const updatedUsesSel = { ...uses };
@@ -766,13 +822,14 @@ export default function Home() {
       const updatedPlatformsSel = { ...platforms };
       const updatedHintsSel = { ...hints };
       const updatedNicknamesSel = { ...nicknames };
-      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; delete updatedPlatformsSel[n]; delete updatedHintsSel[n]; delete updatedNicknamesSel[n]; });
+      toDelete.forEach((n) => { delete updatedUrls[n]; delete updatedPayments[n]; delete updatedNotes[n]; delete updatedStatuses[n]; delete updatedLastEdited[n]; delete updatedAddedAtSel[n]; delete updatedBankAssignments[n]; updatedPinnedSel.delete(n); delete updatedUsesSel[n]; delete updatedEmailsSel[n]; delete updatedPlatformsSel[n]; delete updatedHintsSel[n]; delete updatedNicknamesSel[n]; });
       setMyAppNames(updated);
       setCustomUrls(updatedUrls);
       setPayments(updatedPayments);
       setNotes(updatedNotes);
       setStatuses(updatedStatuses);
       setLastEdited(updatedLastEdited);
+      setAddedAt(updatedAddedAtSel);
       setBankAssignments(updatedBankAssignments);
       setPinnedApps(updatedPinnedSel);
       setUses(updatedUsesSel);
@@ -786,6 +843,7 @@ export default function Home() {
       localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
       localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
       localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
+      localStorage.setItem("app-added-at", JSON.stringify(updatedAddedAtSel));
       localStorage.setItem("app-banks", JSON.stringify(updatedBankAssignments));
       localStorage.setItem("app-pinned", JSON.stringify([...updatedPinnedSel]));
       localStorage.setItem("app-uses", JSON.stringify(updatedUsesSel));
@@ -815,6 +873,11 @@ export default function Home() {
     const updatedPayments = { ...payments, [name]: { type: "free" as const } };
     setPayments(updatedPayments);
     localStorage.setItem("app-payments", JSON.stringify(updatedPayments));
+    if (!addedAt[name]) {
+      const updatedAddedAt = { ...addedAt, [name]: new Date().toISOString() };
+      setAddedAt(updatedAddedAt);
+      localStorage.setItem("app-added-at", JSON.stringify(updatedAddedAt));
+    }
   }
 
   function deleteApp(name: string) {
@@ -843,12 +906,15 @@ export default function Home() {
     delete updatedHintsDel[name];
     const updatedNicknamesDel = { ...nicknames };
     delete updatedNicknamesDel[name];
+    const updatedAddedAtDel = { ...addedAt };
+    delete updatedAddedAtDel[name];
     setMyAppNames(updated);
     setCustomUrls(updatedUrls);
     setPayments(updatedPayments);
     setNotes(updatedNotes);
     setStatuses(updatedStatuses);
     setLastEdited(updatedLastEdited);
+    setAddedAt(updatedAddedAtDel);
     setBankAssignments(updatedBankAssignments);
     setPinnedApps(updatedPinned);
     setUses(updatedUsesDel);
@@ -862,6 +928,7 @@ export default function Home() {
     localStorage.setItem("app-notes", JSON.stringify(updatedNotes));
     localStorage.setItem("app-statuses", JSON.stringify(updatedStatuses));
     localStorage.setItem("app-last-edited", JSON.stringify(updatedLastEdited));
+    localStorage.setItem("app-added-at", JSON.stringify(updatedAddedAtDel));
     localStorage.setItem("app-banks", JSON.stringify(updatedBankAssignments));
     localStorage.setItem("app-pinned", JSON.stringify([...updatedPinned]));
     localStorage.setItem("app-uses", JSON.stringify(updatedUsesDel));
@@ -923,6 +990,13 @@ export default function Home() {
     if (updated.has(name)) updated.delete(name); else updated.add(name);
     setPinnedApps(updated);
     localStorage.setItem("app-pinned", JSON.stringify([...updated]));
+  }
+
+  function toggleHideApp(name: string) {
+    const next = new Set(hiddenApps);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    setHiddenApps(next);
+    localStorage.setItem("app-hidden", JSON.stringify([...next]));
   }
 
   function saveEdit() {
@@ -1129,7 +1203,7 @@ export default function Home() {
     <main className={`min-h-screen px-4 sm:px-10 pt-0 pb-8 sm:pb-12 transition-colors duration-200 ${selectMode ? "pb-28" : ""} ${d ? "bg-[#0d0d0d] text-white" : "bg-[#f7f6f3] text-gray-900"}`}>
 
       {/* Header */}
-      <div className={`-mx-4 sm:-mx-10 px-4 sm:px-10 py-3 mb-6 border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
+      <div className={`-mx-4 sm:-mx-10 px-4 sm:px-10 py-3 border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
         <div className="flex items-center gap-2.5">
           <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-amber-500 ${d ? "bg-amber-500/10" : "bg-amber-50"}`}>
@@ -1141,78 +1215,20 @@ export default function Home() {
             {changelog[0].version}
           </button>
         </div>
-        {/* Add app autocomplete search — centered */}
+        {/* Center nav */}
         <div className="flex justify-center">
-          <div className="relative w-full max-w-lg">
-            <input
-              type="text"
-              placeholder="Add an app…"
-              value={addSearch}
-              onChange={(e) => setAddSearch(e.target.value)}
-              onFocus={() => setShowAddDropdown(true)}
-              onBlur={() => setTimeout(() => setShowAddDropdown(false), 150)}
-              onKeyDown={(e) => e.key === "Escape" && (setAddSearch(""), setShowAddDropdown(false), (e.target as HTMLInputElement).blur())}
-              className={`pl-4 py-2.5 rounded-xl text-sm outline-none border transition-colors w-full ${addSearch ? "pr-8" : "pr-3"} ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
-            />
-            {addSearch && (
-              <button onClick={() => setAddSearch("")} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            )}
-            {showAddDropdown && (
-              <div className={`absolute top-full left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
-                {!addSearch.trim() ? (
-                  /* Empty / focused state — browse prompt */
-                  <button
-                    onMouseDown={() => { setShowAddDropdown(false); openAddModal(null); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
-                    <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${d ? "bg-white/8" : "bg-gray-100"}`}>
-                      ✦
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>Browse all {catalog.length} apps</div>
-                      <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>
-                        {myAppNames.length} in your hub · {catalog.length - myAppNames.length} available to add
-                      </div>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 ${d ? "text-gray-600" : "text-gray-300"}`}>
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                ) : addDropdownApps.length === 0 ? (
-                  <p className={`text-xs text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>
-                    No results for &ldquo;{addSearch}&rdquo;
-                  </p>
-                ) : addDropdownApps.map((app) => {
-                  const alreadyAdded = myAppNames.includes(app.name);
-                  return (
-                    <button key={app.name}
-                      onMouseDown={() => { if (!alreadyAdded) { addApp(app.name); setAddSearch(""); setShowAddDropdown(false); showToast(`${app.name} added!`); } }}
-                      className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${alreadyAdded ? "cursor-default opacity-50" : d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={app.icon} alt={app.name} className="w-9 h-9 rounded-xl flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
-                          <span className={`text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{app.brand}</span>
-                          {alreadyAdded && (
-                            <span className={`ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-600"}`}>
-                              In hub
-                            </span>
-                          )}
-                        </div>
-                        <div className={`text-xs leading-snug mt-0.5 line-clamp-2 ${d ? "text-gray-400" : "text-gray-500"}`}>{app.description}</div>
-                        <div className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>{app.tags.join(" · ")}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <nav className={`flex items-center gap-0.5 p-1 rounded-xl ${d ? "bg-white/[0.06]" : "bg-black/[0.05]"}`}>
+            <span className={`px-3.5 py-1.5 rounded-lg text-sm font-medium ${d ? "bg-white/10 text-white" : "bg-white text-gray-900 shadow-sm"}`}>Hub</span>
+            <Link href="/dashboard" className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${d ? "text-gray-400 hover:text-gray-200 hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-black/[0.04]"}`}>Dashboard</Link>
+          </nav>
         </div>
         {/* Right: action buttons */}
         <div className="flex items-center gap-2">
+          {/* Blur amounts toggle */}
+          <button onClick={() => setBlurAmounts((v) => !v)} title={blurAmounts ? "Show amounts" : "Hide amounts"}
+            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${blurAmounts ? d ? "bg-violet-500/20 text-violet-400" : "bg-violet-100 text-violet-600" : d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
+            {blurAmounts ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
           {/* Share */}
           <button onClick={shareApps} title="Share hub"
             className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-medium transition-colors ${d ? "bg-white/10 text-gray-300 hover:bg-white/15" : "bg-black/[0.06] text-gray-600 hover:bg-black/10"}`}>
@@ -1238,6 +1254,81 @@ export default function Home() {
           />
         </div>
       </div>
+      </div>
+
+      {/* Add-app search strip */}
+      <div className={`-mx-4 sm:-mx-10 px-4 sm:px-10 py-3 mb-5 border-b ${d ? "border-white/[0.06]" : "border-black/[0.06]"}`}>
+        <div className="max-w-xl mx-auto">
+        <div className="relative">
+          <input
+            ref={addInputRef}
+            type="text"
+            placeholder="Add an app…"
+            value={addSearch}
+            onChange={(e) => setAddSearch(e.target.value)}
+            onFocus={() => setShowAddDropdown(true)}
+            onBlur={() => setTimeout(() => setShowAddDropdown(false), 150)}
+            onKeyDown={(e) => e.key === "Escape" && (setAddSearch(""), setShowAddDropdown(false), (e.target as HTMLInputElement).blur())}
+            className={`pl-4 py-2 rounded-xl text-sm outline-none border transition-colors w-full ${addSearch ? "pr-8" : "pr-3"} ${d ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-white/25" : "bg-white border-black/[0.08] text-gray-900 placeholder-gray-400 focus:border-black/20"}`}
+          />
+          {addSearch && (
+            <button onClick={() => setAddSearch("")} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${d ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
+          {showAddDropdown && (
+            <div className={`absolute top-full left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl overflow-hidden z-50 ${d ? "bg-[#1c1c1c] border-white/10" : "bg-white border-black/[0.08]"}`}>
+              {!addSearch.trim() ? (
+                <button
+                  onMouseDown={() => { setShowAddDropdown(false); openAddModal(null); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
+                  <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${d ? "bg-white/8" : "bg-gray-100"}`}>✦</div>
+                  <div className="min-w-0 flex-1">
+                    <div className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>Browse all {catalog.length} apps</div>
+                    <div className={`text-xs mt-0.5 ${d ? "text-gray-500" : "text-gray-400"}`}>{myAppNames.length} in your hub · {catalog.length - myAppNames.length} available to add</div>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 ${d ? "text-gray-600" : "text-gray-300"}`}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              ) : addDropdownApps.length === 0 ? (
+                <p className={`text-xs text-center py-4 ${d ? "text-gray-500" : "text-gray-400"}`}>No results for &ldquo;{addSearch}&rdquo;</p>
+              ) : addDropdownApps.map((app) => {
+                const alreadyAdded = myAppNames.includes(app.name);
+                return (
+                  <button key={app.name}
+                    onMouseDown={() => { if (!alreadyAdded) { addApp(app.name); setAddSearch(""); setShowAddDropdown(false); showToast(`${app.name} added!`); } }}
+                    className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${alreadyAdded ? "cursor-default opacity-50" : d ? "hover:bg-white/6" : "hover:bg-gray-50"}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={app.icon} alt={app.name} className="w-9 h-9 rounded-xl flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-sm font-medium ${d ? "text-gray-100" : "text-gray-800"}`}>{app.name}</span>
+                        <span className={`text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{app.brand}</span>
+                        {alreadyAdded && (
+                          <span className={`ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${d ? "bg-green-500/15 text-green-400" : "bg-green-50 text-green-600"}`}>In hub</span>
+                        )}
+                      </div>
+                      <div className={`text-xs leading-snug mt-0.5 line-clamp-2 ${d ? "text-gray-400" : "text-gray-500"}`}>{app.description}</div>
+                      <div className={`text-[11px] mt-1 ${d ? "text-gray-600" : "text-gray-400"}`}>{app.tags.join(" · ")}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {/* Feeling lucky */}
+        <div className="flex justify-center mt-2">
+          <button
+            onClick={pickLucky}
+            className={`flex items-center gap-1.5 text-xs transition-colors px-3 py-1 rounded-full ${d ? "text-gray-600 hover:text-gray-300 hover:bg-white/[0.06]" : "text-gray-400 hover:text-gray-600 hover:bg-black/[0.05]"}`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            Feeling lucky
+          </button>
+        </div>
+        </div>
       </div>
 
       {/* Controls row — app count lives here now */}
@@ -1353,17 +1444,17 @@ export default function Home() {
             )}
             {statsMonthly > 0 && (
               <button onClick={() => setBillingView("monthly")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-                {fmtCurrency(statsMonthly)}/mo
+                <span className={blurAmounts ? "blur-sm select-none" : ""}>{fmtCurrency(statsMonthly)}</span>/mo
               </button>
             )}
             {statsAnnual > 0 && (
               <button onClick={() => setBillingView("annually")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-                {fmtCurrency(statsAnnual)}/yr
+                <span className={blurAmounts ? "blur-sm select-none" : ""}>{fmtCurrency(statsAnnual)}</span>/yr
               </button>
             )}
             {statsOnce > 0 && (
               <button onClick={() => setBillingView("once")} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${d ? "bg-white/8 text-gray-400 hover:bg-white/12" : "bg-black/[0.05] text-gray-500 hover:bg-black/[0.08]"}`}>
-                {fmtCurrency(statsOnce)} one-time
+                <span className={blurAmounts ? "blur-sm select-none" : ""}>{fmtCurrency(statsOnce)}</span> one-time
               </button>
             )}
           </div>
@@ -1466,6 +1557,7 @@ export default function Home() {
               payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
               bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} nickname={nicknames[app.name]} d={d}
               selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
+              blurAmounts={blurAmounts} isLocked={hiddenApps.has(app.name)}
               onOpen={() => openAppDetail(app.name)}
               onToggleSelect={() => toggleSelect(app.name)}
             />
@@ -1492,6 +1584,7 @@ export default function Home() {
                       payment={payments[name]} currency={currency} notes={notes[name]} status={statuses[name]}
                       bank={bankAssignments[name]} use={uses[name]} platform={platforms[name]} email={emails[name]} hint={hints[name]} nickname={nicknames[name]} d={d}
                       selectMode={false} isSelected={false} viewMode={viewMode} cardProps={cardProps}
+                      blurAmounts={blurAmounts} isLocked={hiddenApps.has(name)}
                       onOpen={() => openAppDetail(name)}
                       onToggleSelect={() => {}}
                     />
@@ -1514,6 +1607,7 @@ export default function Home() {
                     payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
                     bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} pinned d={d}
                     selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
+                    blurAmounts={blurAmounts} isLocked={hiddenApps.has(app.name)}
                     onOpen={() => openAppDetail(app.name)}
                     onToggleSelect={() => toggleSelect(app.name)}
                   />
@@ -1542,6 +1636,7 @@ export default function Home() {
                       payment={payments[app.name]} currency={currency} notes={notes[app.name]} status={statuses[app.name]}
                       bank={bankAssignments[app.name]} use={uses[app.name]} platform={platforms[app.name]} email={emails[app.name]} hint={hints[app.name]} nickname={nicknames[app.name]} d={d}
                       selectMode={selectMode} isSelected={selectedApps.has(app.name)} viewMode={viewMode} cardProps={cardProps}
+                      blurAmounts={blurAmounts} isLocked={hiddenApps.has(app.name)}
                       onOpen={() => openAppDetail(app.name)}
                       onToggleSelect={() => toggleSelect(app.name)}
                     />
@@ -1635,15 +1730,32 @@ export default function Home() {
                     </button>
                   )}
                 </div>
+                {hiddenApps.has(editing!) && (
+                  <div className={`flex items-center gap-1 mt-1 text-[11px] font-medium ${d ? "text-amber-400" : "text-amber-600"}`}>
+                    <LockIcon size={10} />
+                    <span>Locked — hidden from hub</span>
+                  </div>
+                )}
                 {/* Meta + action row */}
                 <div className="flex items-center justify-between gap-2 mt-1.5">
                   <div className="min-w-0">
                     <div className={`text-xs ${d ? "text-gray-500" : "text-gray-400"}`}>{editingApp.brand}</div>
                     <div className={`text-[11px] mt-0.5 ${d ? "text-gray-600" : "text-gray-400"}`}>
-                      {lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}
+                      {addedAt[editing!] && <span>Added {formatLastEdited(addedAt[editing!])}</span>}
+                      {addedAt[editing!] && <span className="mx-1">·</span>}
+                      <span>{lastEdited[editing!] ? `Edited ${formatLastEdited(lastEdited[editing!])}` : "Never edited"}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={() => toggleHideApp(editing!)}
+                      title={hiddenApps.has(editing!) ? "Unlock app" : "Lock app"}
+                      className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                        hiddenApps.has(editing!)
+                          ? "bg-amber-500/15 text-amber-500"
+                          : d ? "bg-white/8 text-gray-400 hover:bg-white/12 hover:text-gray-200" : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                      }`}>
+                      <LockIcon size={14} />
+                    </button>
                     <button onClick={() => togglePin(editing!)}
                       title={pinnedApps.has(editing!) ? "Unpin" : "Pin to top"}
                       className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
@@ -2110,7 +2222,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-bold text-lg">{titles[billingView]}</h2>
                 {entries.length > 0 && (
-                  <span className={`text-sm font-semibold ${d ? "text-gray-300" : "text-gray-700"}`}>{totalLabels[billingView]}</span>
+                  <span className={`text-sm font-semibold ${d ? "text-gray-300" : "text-gray-700"}`}><span className={blurAmounts ? "blur-sm select-none" : ""}>{totalLabels[billingView]}</span></span>
                 )}
               </div>
               <p className={`text-xs mb-5 ${d ? "text-gray-500" : "text-gray-400"}`}>
@@ -2136,7 +2248,7 @@ export default function Home() {
                             )}
                           </div>
                           <div className="text-right">
-                            <div className={`text-sm font-medium ${d ? "text-gray-200" : "text-gray-800"}`}>{fmtCurrency(parseFloat(pay.amount!))}</div>
+                            <div className={`text-sm font-medium ${d ? "text-gray-200" : "text-gray-800"}`}><span className={blurAmounts ? "blur-sm select-none" : ""}>{fmtCurrency(parseFloat(pay.amount!))}</span></div>
                             {paymentDueLabel(pay) && (
                               <div className={`text-[11px] ${alert ? "text-orange-400 font-medium" : d ? "text-gray-500" : "text-gray-400"}`}>
                                 {alert ? (daysUntil === 0 ? "Due today!" : `Due in ${daysUntil}d`) : paymentDueLabel(pay)}
@@ -2153,7 +2265,7 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <span className={`text-xs font-semibold ${d ? "text-amber-400" : "text-amber-700"}`}>Monthly equivalent</span>
                         <span className={`text-base font-bold ${d ? "text-amber-400" : "text-amber-700"}`}>
-                          ~{fmtCurrency(total / 12)}<span className="text-xs font-normal">/mo</span>
+                          ~<span className={blurAmounts ? "blur-sm select-none" : ""}>{fmtCurrency(total / 12)}</span><span className="text-xs font-normal">/mo</span>
                         </span>
                       </div>
                       <p className={`text-[11px] mt-1 ${d ? "text-amber-500/70" : "text-amber-600/70"}`}>
@@ -2478,9 +2590,9 @@ export default function Home() {
 
 // ─── App card ─────────────────────────────────────────────────────────────────
 
-function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, hint, nickname, d, selectMode, isSelected, viewMode, cardProps, onOpen, onToggleSelect }: {
+function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, hint, nickname, d, selectMode, isSelected, viewMode, cardProps, blurAmounts, isLocked, onOpen, onToggleSelect }: {
   app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; hint?: string; nickname?: string; d: boolean;
-  selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps;
+  selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps; blurAmounts?: boolean; isLocked?: boolean;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
   const bankData = bank ? bankCatalog.find((b) => b.name === bank) : null;
@@ -2494,17 +2606,17 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
     : null;
 
   const showPaymentInfo = status !== "trial" && status !== "cancelled";
-  const tooltipMeta = [
+  const tooltipMetaBase = [
     app.brand,
     use === "business" ? "Business" : "Personal",
     bankData ? bankData.name : null,
+  ].filter(Boolean).join(" · ");
+  const tooltipMetaPayment = [
     showPaymentInfo && payment ? paymentLabel(payment, currency) : null,
     showPaymentInfo && payment?.method ? METHOD_LABEL[payment.method] : null,
     showPaymentInfo && payment ? paymentDueLabel(payment) : null,
     showPaymentInfo ? dueSoonLabel : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  ].filter(Boolean).join(" · ");
 
   const cardBase = `relative rounded-2xl border transition-all duration-200 group-hover:-translate-y-px ${isCancelled ? "opacity-50" : ""} ${
     isSelected && selectMode
@@ -2512,13 +2624,35 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
       : d ? "bg-white/5 border-white/10 group-hover:bg-white/8 group-hover:border-white/15" : "bg-white border-black/[0.08] group-hover:bg-[#f9f8f5] group-hover:shadow-sm"
   }`;
 
+  if (isLocked) {
+    const lockedBase = `relative rounded-2xl border transition-all duration-200 cursor-pointer ${d ? "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/15" : "bg-white border-black/[0.08] hover:bg-[#f9f8f5] hover:shadow-sm"}`;
+    if (viewMode === "grid") {
+      return (
+        <div className={`${lockedBase} flex items-center justify-center min-h-[7rem]`} onClick={onOpen} title="Locked — click to manage">
+          <span className={d ? "text-gray-600" : "text-gray-300"}><LockIcon size={22} /></span>
+        </div>
+      );
+    }
+    return (
+      <div className={`${lockedBase} flex items-center justify-center px-4 py-3 h-full`} onClick={onOpen} title="Locked — click to manage">
+        <span className={d ? "text-gray-600" : "text-gray-300"}><LockIcon size={18} /></span>
+      </div>
+    );
+  }
+
   if (viewMode === "grid") {
     return (
       <div className="group relative cursor-pointer" onClick={selectMode ? onToggleSelect : onOpen}>
         {!selectMode && (
           <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 w-56 text-xs rounded-xl px-3 py-2.5 leading-snug pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
             <div>{app.description}</div>
-            {tooltipMeta && <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>}
+            {(tooltipMetaBase || tooltipMetaPayment) && (
+              <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>
+                {tooltipMetaBase}
+                {tooltipMetaBase && tooltipMetaPayment ? " · " : ""}
+                {tooltipMetaPayment && (blurAmounts ? <span className="blur-sm select-none">{tooltipMetaPayment}</span> : tooltipMetaPayment)}
+              </div>
+            )}
             {email && <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>}
             {hint && <div className="mt-1.5 text-[11px] border-t border-white/10 pt-1.5 text-violet-400">🔑 {hint}</div>}
             {notes && <div className="mt-1.5 text-[11px] italic border-t border-white/10 pt-1.5 text-amber-400">{notes}</div>}
@@ -2564,7 +2698,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
 
           {/* Payment badge */}
           {!selectMode && cardProps.payment && showPaymentInfo && payment && (
-            <div className="mt-1.5"><PaymentBadge payment={payment} currency={currency} d={d} /></div>
+            <div className="mt-1.5"><PaymentBadge payment={payment} currency={currency} d={d} blur={blurAmounts} /></div>
           )}
 
           {/* Method chip */}
@@ -2603,8 +2737,12 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
       {!selectMode && (
         <div className={`absolute bottom-full left-0 mb-2.5 w-56 text-xs rounded-xl px-3 py-2.5 leading-snug pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${d ? "bg-gray-800 text-gray-300" : "bg-gray-900 text-white"}`}>
           <div>{app.description}</div>
-          {tooltipMeta && (
-            <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>{tooltipMeta}</div>
+          {(tooltipMetaBase || tooltipMetaPayment) && (
+            <div className={`mt-1.5 text-[11px] ${d ? "text-gray-500" : "text-gray-400"}`}>
+              {tooltipMetaBase}
+              {tooltipMetaBase && tooltipMetaPayment ? " · " : ""}
+              {tooltipMetaPayment && (blurAmounts ? <span className="blur-sm select-none">{tooltipMetaPayment}</span> : tooltipMetaPayment)}
+            </div>
           )}
           {email && (
             <div className={`mt-1.5 text-[11px] border-t border-white/10 pt-1.5 ${d ? "text-sky-400" : "text-sky-500"}`}>{email}</div>
@@ -2664,7 +2802,7 @@ function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use
         {/* Right: payment info */}
         {!selectMode && (
           <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
-            {cardProps.payment && showPaymentInfo && payment && <PaymentBadge payment={payment} currency={currency} d={d} />}
+            {cardProps.payment && showPaymentInfo && payment && <PaymentBadge payment={payment} currency={currency} d={d} blur={blurAmounts} />}
             {cardProps.method && payment?.method && !isTrial && !isCancelled && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
             )}

@@ -14,6 +14,41 @@ export type Version = {
 
 const changelog: Version[] = [
   {
+    version: "2026.07.04",
+    date: "2026-07-04",
+    label: "Dashboard Polish",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Added at — each app now records the date it was added to the hub; shown in the app detail modal and included in export/import",
+        ],
+      },
+      {
+        category: "Improved",
+        items: [
+          "Annual projection month labels changed from single letters to numbers (1–12) for clarity",
+          "Spend distribution chart now labeled to clarify the x-axis (cheapest to most expensive)",
+        ],
+      },
+    ],
+  },
+  {
+    version: "2026.07.03.3",
+    date: "2026-07-03",
+    label: "Privacy Mode",
+    groups: [
+      {
+        category: "New",
+        items: [
+          "Hide apps — click the eye icon in any app's detail modal to hide it from the main grid; hidden apps disappear until you reveal them",
+          "Show hidden — an eye button appears in the controls row when you have hidden apps; click to temporarily reveal them with a hidden indicator badge",
+          "Blur amounts — a new eye button in the header blurs all payment amounts everywhere (stats bar, billing overview, card badges, tooltips) so they can't be read during screen recordings",
+        ],
+      },
+    ],
+  },
+  {
     version: "2026.07.03.2",
     date: "2026-07-03",
     label: "Header & Name Edit Polish",

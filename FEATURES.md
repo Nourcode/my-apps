@@ -34,6 +34,7 @@ A running record of every feature implemented in the app. Update this file whene
 
 ## App Details & Customization
 
+- **Added at** — each app records the ISO timestamp when it was first added to the hub; shown in the app detail modal next to the "Edited" line; included in export/import so the date survives a backup restore
 - **App nickname** — per-app display name override stored in localStorage; click the pencil icon in the detail modal header to enter edit mode and type a new name; blur, Enter, or Escape exits edit mode; a Reset button appears when the nickname differs from the original name; nicknames are shown on cards in both grid and list views
 - **Custom URL** — override the default link for any app with a custom URL
 - **Account email** — optionally record which email you use for each app; shown in the hover tooltip in sky blue; stored locally, never sent to any server
@@ -86,6 +87,12 @@ A running record of every feature implemented in the app. Update this file whene
 - **Changelog modal** — "What's New" view showing all versions with release date, label, and categorized changes (New / Improved / Fixed)
 - **`changelog.ts`** — structured data file tracking all versions; update it each release to keep the in-app history accurate
 
+## Privacy
+
+- **Hide apps** — mark any app as hidden via the eye icon in its detail modal; hidden apps disappear from the main grid and all sections; hidden state persists in localStorage across sessions
+- **Show hidden** — an eye button appears in the controls row when at least one app is hidden; click to temporarily reveal hidden apps (they show with a small eye-off badge so you can identify them); click again to hide them
+- **Blur amounts** — a toggle button in the header blurs all payment amounts everywhere (stats bar, billing overview, card badges, and tooltips) so they cannot be read during a screen recording; resets on page reload
+
 ## Visuals & UX
 
 - **View switcher** — toggle between Grid and List view using the grid/list icons next to the search bar; preference saved across sessions
@@ -115,4 +122,4 @@ A running record of every feature implemented in the app. Update this file whene
 
 ---
 
-*Last updated: 2026-07-03 (v8)*
+*Last updated: 2026-07-03 (v9)*
