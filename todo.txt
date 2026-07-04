@@ -1,7 +1,12 @@
 
 Feature suggestions
-New apps to add: Hubspot, tally.so, Netflix, communauto (autopartage en france), citiz (autopartage en france), kindle, Google authenticator, Charles Schwab, Binance (crypto), Meta (facebook), copilot.money
+New apps to add: ✅ done (2026-07-04)
 New banks to add: 
+
+Flash effect when moving from dashboard to hub. 
+Top hub part, adapt it to mobile.
+Refactor page.jsx since it has too many lines.
+Try n8n MCP.
 
 Add when app was added info (date/ added at).
 

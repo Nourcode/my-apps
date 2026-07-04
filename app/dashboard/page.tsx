@@ -3,24 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import catalog from "../catalog";
-
-type PaymentPeriod = "monthly" | "annually" | "once";
-type PaymentMethod = "visa" | "mastercard" | "amex" | "paypal" | "apple" | "google" | "other";
-type Payment = {
-  type: "free" | "paid";
-  amount?: string;
-  period?: PaymentPeriod;
-  day?: number;
-  month?: number;
-  method?: PaymentMethod;
-};
-type AppStatus = "active" | "trial" | "cancelled";
-type AppUse = "personal" | "business";
-
-const METHOD_LABEL: Record<PaymentMethod, string> = {
-  visa: "Visa", mastercard: "Mastercard", amex: "Amex",
-  paypal: "PayPal", apple: "Apple Pay", google: "Google Pay", other: "Other",
-};
+import { METHOD_LABEL, type PaymentPeriod, type PaymentMethod, type Payment, type AppStatus, type AppUse } from "../lib/types";
 
 function fmt(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", {

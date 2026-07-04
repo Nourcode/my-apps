@@ -115,7 +115,7 @@ A running record of every feature implemented in the app. Update this file whene
 
 - **App catalog** — curated list of 100+ popular apps spanning AI, Dev, Design, Marketing, Productivity, Social, Finance, Gaming, Shopping, Telecom, and more
 - **Telecom category** — mobile carrier and telecom apps (e.g. SFR 🇫🇷); added 2026-07-02
-- **Finance category** — all 30 banks from the bank catalog are also browsable as apps (Airwallex, Bank of America, Bluevine, BNP Paribas, Boursobank, Capital One, Chase, Citibank, HSBC, Mercury, N26 Personal, Payoneer, Qonto, Relay, Revolut Business, Revolut Personal, SHINE, Wells Fargo, Wise Business, Wise Personal); plus brokerage apps (Interactive Brokers / IBKR)
+- **Finance category** — all 31 banks from the bank catalog are also browsable as apps (Airwallex, Bank of America, Bluevine, BNP Paribas, Boursobank, Capital One, Chase, Citibank, HSBC, Mercury, N26 Personal, Payoneer, Qonto, Relay, Revolut Business, Revolut Personal, SHINE, Wells Fargo, Wise Business, Wise Personal); plus brokerage apps (Interactive Brokers / IBKR)
 - **Gaming category** — game stores and platforms (Steam, itch.io)
 - **Health category** — gyms and personal care (Fitness Park 🇫🇷, Neat 🇫🇷)
 - **Shopping category** — retail and marketplace apps (Amazon, Apple Store, Carrefour, Shopify…)

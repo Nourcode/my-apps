@@ -248,6 +248,14 @@ const banks: Bank[] = [
     country: "United States",
     flag: "🇺🇸",
   },
+  {
+    name: "Charles Schwab",
+    url: "https://schwab.com",
+    icon: "https://www.google.com/s2/favicons?domain=schwab.com&sz=64",
+    description: "US brokerage and bank offering commission-free trading, checking accounts, IRAs, and financial advisory services.",
+    country: "United States",
+    flag: "🇺🇸",
+  },
 ];
 
 export default banks;

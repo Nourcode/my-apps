@@ -453,6 +453,38 @@ const catalog: App[] = [
     description: "Automated Instagram DM outreach tool for lead generation and prospecting.",
     brand: "AutoIGDM",
   },
+  {
+    name: "HubSpot",
+    url: "https://hubspot.com",
+    icon: "https://www.google.com/s2/favicons?domain=hubspot.com&sz=64",
+    tags: ["Marketing"],
+    description: "All-in-one CRM platform for marketing, sales, and customer service — manage contacts, pipelines, email campaigns, and analytics.",
+    brand: "HubSpot",
+  },
+  {
+    name: "Tally",
+    url: "https://tally.so",
+    icon: "https://www.google.com/s2/favicons?domain=tally.so&sz=64",
+    tags: ["Marketing"],
+    description: "Free form builder with a clean editor for surveys, lead capture, quizzes, and waitlists — no per-response pricing.",
+    brand: "Tally",
+  },
+  {
+    name: "Airscale",
+    url: "https://airscale.io",
+    icon: "https://www.google.com/s2/favicons?domain=airscale.io&sz=64",
+    tags: ["Marketing"],
+    description: "AI-powered outreach and lead enrichment platform for scaling personalized cold email and LinkedIn campaigns.",
+    brand: "Airscale",
+  },
+  {
+    name: "Vayne",
+    url: "https://vayne.io",
+    icon: "https://www.google.com/s2/favicons?domain=vayne.io&sz=64",
+    tags: ["Marketing"],
+    description: "B2B sales intelligence and prospecting tool for finding verified leads and automating outreach workflows.",
+    brand: "Vayne",
+  },
   // Productivity
   {
     name: "Airtable",
@@ -631,6 +663,14 @@ const catalog: App[] = [
     description: "End-to-end encrypted password manager from Proton, with zero-knowledge privacy.",
     brand: "Proton",
   },
+  {
+    name: "Google Authenticator",
+    url: "https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2",
+    icon: "https://www.google.com/s2/favicons?domain=google.com&sz=64",
+    tags: ["Security"],
+    description: "Two-factor authentication app by Google — generates time-based one-time passwords (TOTP) to secure your accounts.",
+    brand: "Google",
+  },
   // Social
   {
     name: "Reddit",
@@ -720,6 +760,14 @@ const catalog: App[] = [
     description: "Real-time social network for news, discussion, and public conversation. Formerly Twitter.",
     brand: "X Corp.",
   },
+  {
+    name: "Facebook",
+    url: "https://facebook.com",
+    icon: "https://www.google.com/s2/favicons?domain=facebook.com&sz=64",
+    tags: ["Social"],
+    description: "Meta's flagship social network for connecting with friends, family, and communities through posts, groups, and marketplace.",
+    brand: "Meta",
+  },
   // Storage
   {
     name: "OneDrive",
@@ -761,6 +809,14 @@ const catalog: App[] = [
     tags: ["Entertainment"],
     description: "Music and podcast streaming service with millions of tracks.",
     brand: "Spotify",
+  },
+  {
+    name: "Netflix",
+    url: "https://netflix.com",
+    icon: "https://www.google.com/s2/favicons?domain=netflix.com&sz=64",
+    tags: ["Entertainment"],
+    description: "Video streaming service with original series, films, and documentaries available in 190+ countries.",
+    brand: "Netflix",
   },
   // Shopping
   {
@@ -827,6 +883,14 @@ const catalog: App[] = [
     tags: ["Learning"],
     description: "Online language learning marketplace to book lessons with professional teachers and community tutors worldwide.",
     brand: "italki",
+  },
+  {
+    name: "Kindle",
+    url: "https://read.amazon.com",
+    icon: "https://www.google.com/s2/favicons?domain=read.amazon.com&sz=64",
+    tags: ["Learning"],
+    description: "Amazon's e-reader platform for buying, reading, and managing ebooks across devices — access millions of titles instantly.",
+    brand: "Amazon",
   },
   // Game Dev
   {
@@ -999,6 +1063,22 @@ const catalog: App[] = [
     tags: ["Travel"],
     description: "French car rental network with 350+ agencies across France offering short and long-term vehicle hire at competitive rates.",
     brand: "ADA",
+  },
+  {
+    name: "Communauto",
+    url: "https://communauto.com",
+    icon: "https://www.google.com/s2/favicons?domain=communauto.com&sz=64",
+    tags: ["Travel"],
+    description: "French and Canadian carsharing service offering round-trip and one-way vehicle rentals by the hour or day. 🇫🇷",
+    brand: "Communauto",
+  },
+  {
+    name: "Citiz",
+    url: "https://citiz.coop",
+    icon: "https://www.google.com/s2/favicons?domain=citiz.coop&sz=64",
+    tags: ["Travel"],
+    description: "French cooperative carsharing network with vehicles available 24/7 at stations across major French cities. 🇫🇷",
+    brand: "Citiz",
   },
   // Finance
   {
@@ -1248,6 +1328,30 @@ const catalog: App[] = [
     tags: ["Finance"],
     description: "US-chartered bank open to international applicants — get a US Visa credit card and bank account without a US address. 🇺🇸",
     brand: "Zenus",
+  },
+  {
+    name: "Charles Schwab",
+    url: "https://schwab.com",
+    icon: "https://www.google.com/s2/favicons?domain=schwab.com&sz=64",
+    tags: ["Finance"],
+    description: "US brokerage and bank offering commission-free stock trading, IRAs, checking accounts, and financial advisory services. 🇺🇸",
+    brand: "Charles Schwab",
+  },
+  {
+    name: "Binance",
+    url: "https://binance.com",
+    icon: "https://www.google.com/s2/favicons?domain=binance.com&sz=64",
+    tags: ["Finance"],
+    description: "World's largest cryptocurrency exchange — trade Bitcoin, Ethereum, and 350+ altcoins with spot, futures, and earn products.",
+    brand: "Binance",
+  },
+  {
+    name: "Copilot Money",
+    url: "https://copilot.money",
+    icon: "https://www.google.com/s2/favicons?domain=copilot.money&sz=64",
+    tags: ["Finance"],
+    description: "Personal finance app for iPhone that syncs all your accounts, tracks spending, and visualizes your financial picture in one place.",
+    brand: "Copilot",
   },
   // Health
   {
