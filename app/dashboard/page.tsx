@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import catalog from "../catalog";
 import { METHOD_LABEL, type PaymentPeriod, type PaymentMethod, type Payment, type AppStatus, type AppUse } from "../lib/types";
@@ -142,6 +142,13 @@ export default function DashboardPage() {
   const [uses, setUses] = useState<Record<string, AppUse>>({});
   const [currency, setCurrency] = useState("USD");
 
+  useLayoutEffect(() => {
+    const dark = localStorage.getItem("theme") === "dark";
+    if (dark) setIsDark(true);
+    document.documentElement.classList.toggle("dark", dark);
+    document.body.style.background = dark ? "#0d0d0d" : "#f7f6f3";
+  }, []);
+
   useEffect(() => {
     const s = (k: string) => localStorage.getItem(k);
     const j = <T,>(v: string | null, fb: T): T => { try { return v ? JSON.parse(v) : fb; } catch { return fb; } };
@@ -154,9 +161,6 @@ export default function DashboardPage() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    document.body.style.background = isDark ? "#0d0d0d" : "#f7f6f3";
-  }, [isDark]);
 
   const d = isDark;
 
@@ -266,7 +270,7 @@ export default function DashboardPage() {
   const sub   = d ? "text-gray-400" : "text-gray-500";
 
   return (
-    <div className={d ? "text-[#e8e4dc]" : "text-[#1a1916]"} style={{ minHeight: "100vh" }}>
+    <div className={`page-in ${d ? "text-[#e8e4dc]" : "text-[#1a1916]"}`} style={{ minHeight: "100vh" }}>
 
       {/* ── Header — matches hub layout exactly ── */}
       <div className={`border-b ${d ? "border-white/[0.08]" : "border-black/[0.07]"}`}>
@@ -283,7 +287,7 @@ export default function DashboardPage() {
           {/* Center: same pill nav as hub, Dashboard active */}
           <div className="flex-1 flex justify-center">
             <nav className={`flex items-center gap-0.5 p-1 rounded-xl ${d ? "bg-white/[0.06]" : "bg-black/[0.05]"}`}>
-              <Link href="/" className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${d ? "text-gray-400 hover:text-gray-200 hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-black/[0.04]"}`}>Hub</Link>
+              <Link href="/hub" className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${d ? "text-gray-400 hover:text-gray-200 hover:bg-white/8" : "text-gray-400 hover:text-gray-700 hover:bg-black/[0.04]"}`}>Hub</Link>
               <span className={`px-3.5 py-1.5 rounded-lg text-sm font-medium ${d ? "bg-white/10 text-white" : "bg-white text-gray-900 shadow-sm"}`}>Dashboard</span>
             </nav>
           </div>

@@ -120,6 +120,14 @@ A running record of every feature implemented in the app. Update this file whene
 - **Health category** — gyms and personal care (Fitness Park 🇫🇷, Neat 🇫🇷)
 - **Shopping category** — retail and marketplace apps (Amazon, Apple Store, Carrefour, Shopify…)
 
+## Code Architecture
+
+- **`app/lib/types.ts`** — shared TypeScript types (`Payment`, `AppStatus`, `AppUse`, `AppPlatform`, `CardProps`, etc.) and `METHOD_LABEL` constant; imported by `page.tsx`, `dashboard/page.tsx`, `AppCard.tsx`
+- **`app/lib/utils.ts`** — pure utility functions (`formatPaidLabel`, `paymentLabel`, `paymentDueLabel`, `getDaysUntilDue`, `formatLastEdited`, `ordinal`, `MONTH_SHORT`)
+- **`app/lib/storage.ts`** — single module owning all 20 localStorage keys; `loadHubData()`, `loadPrefs()`, `save.*`, `saveHubData()`, `clearHubData()` — the SaaS migration bridge
+- **`app/components/icons.tsx`** — all 22 SVG icon components extracted from `page.tsx`
+- **`app/components/AppCard.tsx`** — `AppCard` component (grid + list view, locked state, payment badge, due-date alert) extracted from `page.tsx`
+
 ---
 
-*Last updated: 2026-07-03 (v9)*
+*Last updated: 2026-07-04 (v10)*

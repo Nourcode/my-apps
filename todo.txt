@@ -1,6 +1,6 @@
 
 Feature suggestions
-New apps to add: ✅ done (2026-07-04)
+New apps to add: anymailfinder, monday.com
 New banks to add: 
 
 Flash effect when moving from dashboard to hub. 

@@ -10,6 +10,9 @@ export type Payment = {
 };
 export type AppStatus = "active" | "trial" | "cancelled";
 export type AppUse = "personal" | "business";
+export type AppPlatform = "desktop" | "mobile" | "both";
+export type CardProperty = "brand" | "status" | "use" | "platform" | "payment" | "method" | "dueDate" | "bank";
+export type CardProps = Record<CardProperty, boolean>;
 
 export const METHOD_LABEL: Record<PaymentMethod, string> = {
   visa: "Visa", mastercard: "Mastercard", amex: "Amex",

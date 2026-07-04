@@ -2,4 +2,19 @@
 
 body {
   margin: 0;
+  background: #f7f6f3;
+  transition: background 0.2s;
+}
+
+html.dark body {
+  background: #0d0d0d;
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.page-in {
+  animation: page-in 0.15s ease-out;
 }

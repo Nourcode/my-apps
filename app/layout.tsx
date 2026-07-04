@@ -12,7 +12,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={geist.className} suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {/* Adds .dark to <html> before React mounts so CSS sets the correct background immediately */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}` }} />
+        {children}
+      </body>
     </html>
   );
 }
