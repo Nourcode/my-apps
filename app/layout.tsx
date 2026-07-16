@@ -7,6 +7,11 @@ const geist = Geist({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Helio",
   description: "Your personal app hub",
+  other: {
+    // Tells Dark Reader the site manages its own dark mode — prevents it from
+    // injecting data-darkreader-* attributes that cause React hydration mismatches
+    "darkreader-lock": "",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

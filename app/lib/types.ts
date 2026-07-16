@@ -1,4 +1,10 @@
 export type PaymentPeriod = "monthly" | "annually" | "once";
+export type SpendingEntry = {
+  id: string;
+  date: string;   // YYYY-MM-DD
+  amount: number;
+  note?: string;
+};
 export type PaymentMethod = "visa" | "mastercard" | "amex" | "paypal" | "apple" | "google" | "other";
 export type Payment = {
   type: "free" | "paid";

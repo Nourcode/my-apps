@@ -141,6 +141,7 @@ export default function DashboardPage() {
   const [statuses, setStatuses] = useState<Record<string, AppStatus>>({});
   const [uses, setUses] = useState<Record<string, AppUse>>({});
   const [currency, setCurrency] = useState("USD");
+  const [spendingLog, setSpendingLog] = useState<Record<string, { date: string; amount: number }[]>>({});
 
   useLayoutEffect(() => {
     const dark = localStorage.getItem("theme") === "dark";
@@ -158,6 +159,7 @@ export default function DashboardPage() {
     setUses(j(s("app-uses"), {}));
     const c = s("app-currency"); if (c) setCurrency(c);
     if (s("theme") === "dark") setIsDark(true);
+    setSpendingLog(j(s("app-spending-log"), {}));
     setMounted(true);
   }, []);
 
@@ -187,6 +189,10 @@ export default function DashboardPage() {
     else if (p.period === "once") oneTimeTotal += a;
   }
   const effectiveMo = monthlyTotal + annualTotal / 12;
+  const thisMonthKey = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; })();
+  const variableThisMonth = active.reduce((sum, name) => {
+    return sum + (spendingLog[name] ?? []).filter(e => e.date.startsWith(thisMonthKey)).reduce((s, e) => s + e.amount, 0);
+  }, 0);
   const paidCount = active.filter(n => payments[n]?.type === "paid").length;
   const freeCount = active.filter(n => !payments[n] || payments[n]?.type === "free").length;
   const businessCount = appNames.filter(n => uses[n] === "business").length;
@@ -305,21 +311,34 @@ export default function DashboardPage() {
 
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p className={`text-[11px] uppercase tracking-widest font-semibold mb-1 ${muted}`}>Effective monthly spend</p>
-              <div className="flex items-baseline gap-3">
+              <p className={`text-[11px] uppercase tracking-widest font-semibold mb-1 ${muted}`}>Monthly equivalent</p>
+              <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold" style={{ letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
                   {fmt(effectiveMo, currency)}
                 </span>
+                <span className={`text-sm ${muted}`}>/ mo</span>
+              </div>
+              <div className={`mt-2 flex flex-col gap-0.5 text-xs ${muted}`}>
+                {monthlyTotal > 0 && (
+                  <span>{fmt(monthlyTotal, currency)}/mo from subscriptions</span>
+                )}
                 {annualTotal > 0 && (
-                  <span className={`text-sm ${muted}`}>/ mo</span>
+                  <span>
+                    {fmt(annualTotal, currency)}/yr annual
+                    <span className="opacity-60"> (÷ 12 = {fmt(annualTotal / 12, currency)}/mo)</span>
+                  </span>
+                )}
+                {oneTimeTotal > 0 && (
+                  <span className="opacity-60">{fmt(oneTimeTotal, currency)} one-time</span>
+                )}
+                {variableThisMonth > 0 ? (
+                  <span className={`mt-1 pt-1 border-t ${d ? "border-white/10 text-teal-400" : "border-black/[0.08] text-teal-600"}`}>
+                    + {fmt(variableThisMonth, currency)} variable this month <span className="opacity-60">(not in total above)</span>
+                  </span>
+                ) : (
+                  <span className="opacity-40 italic mt-0.5">Variable spending not tracked this month</span>
                 )}
               </div>
-              <p className={`text-xs mt-2 ${muted}`}>
-                {monthlyTotal > 0 && <span>{fmt(monthlyTotal, currency)} monthly</span>}
-                {monthlyTotal > 0 && annualTotal > 0 && <span className="mx-1.5 opacity-40">·</span>}
-                {annualTotal > 0 && <span>{fmt(annualTotal, currency)}/yr annual</span>}
-                {oneTimeTotal > 0 && <span className="ml-1.5 opacity-60">· {fmt(oneTimeTotal, currency)} one-time</span>}
-              </p>
             </div>
             <div className="text-right flex-shrink-0">
               <div className={`text-[11px] uppercase tracking-widest mb-1 ${muted}`}>Apps tracked</div>

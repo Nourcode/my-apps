@@ -7,6 +7,8 @@ A running record of every feature implemented in the app. Update this file whene
 ## App Management
 
 - **App catalog** — curated list of popular apps with names, logos, descriptions, brands, and tags
+- **Phone number** — record which phone number is linked to an app (Details tab in the app modal); useful for knowing which accounts need your phone if you ever lose it; saved to localStorage under `app-phones`
+- **Custom apps** — add any app not in the catalog via the "Add custom app" button in the add dropdown; custom apps get a favicon auto-fetched from their URL, are saved to localStorage, appear in search with an amber "Custom" badge, and can be fully deleted from the catalog via the app modal footer
 - **Add apps** — add any app from the catalog via the "+ Add App" button or the per-category "+ Add" button
 - **Remove apps** — remove a single app via its detail modal ("Remove from hub")
 - **Bulk delete** — select multiple apps in Select Mode and delete them together

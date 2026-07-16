@@ -1,4 +1,5 @@
-import type { Payment, AppStatus, AppUse, AppPlatform, CardProps } from "./types";
+import type { Payment, AppStatus, AppUse, AppPlatform, CardProps, SpendingEntry } from "./types";
+import type { App } from "../catalog";
 
 const KEY = {
   appList:    "my-app-list",
@@ -13,14 +14,17 @@ const KEY = {
   uses:       "app-uses",
   emails:     "app-emails",
   hints:      "app-hints",
+  phones:     "app-phones",
   nicknames:  "app-nicknames",
   hidden:     "app-hidden",
   emailList:  "app-email-list",
   platforms:  "app-platforms",
-  theme:      "theme",
-  currency:   "app-currency",
-  view:       "app-view",
-  cardProps:  "app-card-props",
+  theme:       "theme",
+  currency:    "app-currency",
+  view:        "app-view",
+  cardProps:   "app-card-props",
+  spendingLog:  "app-spending-log",
+  customApps:   "helio-custom-apps",
 } as const;
 
 function getJson<T>(key: string, fallback: T): T {
@@ -50,10 +54,12 @@ export type HubData = {
   uses:       Record<string, AppUse>;
   emails:     Record<string, string>;
   hints:      Record<string, string>;
+  phones:     Record<string, string>;
   nicknames:  Record<string, string>;
   hidden:     string[];
-  emailList:  string[];
-  platforms:  Record<string, AppPlatform>;
+  emailList:   string[];
+  platforms:   Record<string, AppPlatform>;
+  spendingLog: Record<string, SpendingEntry[]>;
 };
 
 export function loadHubData(): HubData {
@@ -70,10 +76,12 @@ export function loadHubData(): HubData {
     uses:       getJson<Record<string, AppUse>>(KEY.uses, {}),
     emails:     getJson<Record<string, string>>(KEY.emails, {}),
     hints:      getJson<Record<string, string>>(KEY.hints, {}),
+    phones:     getJson<Record<string, string>>(KEY.phones, {}),
     nicknames:  getJson<Record<string, string>>(KEY.nicknames, {}),
     hidden:     getJson<string[]>(KEY.hidden, []),
-    emailList:  getJson<string[]>(KEY.emailList, []),
-    platforms:  getJson<Record<string, AppPlatform>>(KEY.platforms, {}),
+    emailList:   getJson<string[]>(KEY.emailList, []),
+    platforms:   getJson<Record<string, AppPlatform>>(KEY.platforms, {}),
+    spendingLog: getJson<Record<string, SpendingEntry[]>>(KEY.spendingLog, {}),
   };
 }
 
@@ -101,15 +109,22 @@ export const save = {
   uses:       (v: Record<string, AppUse>) => setJson(KEY.uses, v),
   emails:     (v: Record<string, string>) => setJson(KEY.emails, v),
   hints:      (v: Record<string, string>) => setJson(KEY.hints, v),
+  phones:     (v: Record<string, string>) => setJson(KEY.phones, v),
   nicknames:  (v: Record<string, string>) => setJson(KEY.nicknames, v),
   hidden:     (v: string[]) => setJson(KEY.hidden, v),
   emailList:  (v: string[]) => setJson(KEY.emailList, v),
   platforms:  (v: Record<string, AppPlatform>) => setJson(KEY.platforms, v),
-  theme:      (v: boolean) => localStorage.setItem(KEY.theme, v ? "dark" : "light"),
-  currency:   (v: string) => localStorage.setItem(KEY.currency, v),
-  view:       (v: "grid" | "list") => localStorage.setItem(KEY.view, v),
-  cardProps:  (v: Partial<CardProps>) => setJson(KEY.cardProps, v),
+  theme:       (v: boolean) => localStorage.setItem(KEY.theme, v ? "dark" : "light"),
+  currency:    (v: string) => localStorage.setItem(KEY.currency, v),
+  view:        (v: "grid" | "list") => localStorage.setItem(KEY.view, v),
+  cardProps:   (v: Partial<CardProps>) => setJson(KEY.cardProps, v),
+  spendingLog: (v: Record<string, SpendingEntry[]>) => setJson(KEY.spendingLog, v),
+  customApps:  (v: App[]) => setJson(KEY.customApps, v),
 };
+
+export function loadCustomApps(): App[] {
+  return getJson<App[]>(KEY.customApps, []);
+}
 
 // Bulk save for atomic multi-key updates (import, deleteApp, deleteSelected)
 export function saveHubData(data: Partial<HubData>): void {
@@ -125,10 +140,12 @@ export function saveHubData(data: Partial<HubData>): void {
   if (data.uses !== undefined)       setJson(KEY.uses, data.uses);
   if (data.emails !== undefined)     setJson(KEY.emails, data.emails);
   if (data.hints !== undefined)      setJson(KEY.hints, data.hints);
+  if (data.phones !== undefined)     setJson(KEY.phones, data.phones);
   if (data.nicknames !== undefined)  setJson(KEY.nicknames, data.nicknames);
   if (data.hidden !== undefined)     setJson(KEY.hidden, data.hidden);
   if (data.emailList !== undefined)  setJson(KEY.emailList, data.emailList);
-  if (data.platforms !== undefined)  setJson(KEY.platforms, data.platforms);
+  if (data.platforms !== undefined)   setJson(KEY.platforms, data.platforms);
+  if (data.spendingLog !== undefined) setJson(KEY.spendingLog, data.spendingLog);
 }
 
 // Clear all app data (keeps emailList and prefs intact)
@@ -146,5 +163,7 @@ export function clearHubData(): void {
   localStorage.removeItem(KEY.emails);
   localStorage.removeItem(KEY.platforms);
   localStorage.removeItem(KEY.hints);
+  localStorage.removeItem(KEY.phones);
   localStorage.removeItem(KEY.nicknames);
+  localStorage.removeItem(KEY.spendingLog);
 }

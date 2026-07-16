@@ -16,11 +16,15 @@ function PaymentBadge({ payment, currency, d, blur }: { payment: Payment; curren
   );
 }
 
-export function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, hint, nickname, d, selectMode, isSelected, viewMode, cardProps, blurAmounts, isLocked, onOpen, onToggleSelect }: {
+export function AppCard({ app, url, payment, currency, notes, status, bank, pinned, use, platform, email, hint, nickname, d, selectMode, isSelected, viewMode, cardProps, blurAmounts, isLocked, monthlyVariableSpend, onOpen, onToggleSelect }: {
   app: App; url: string; payment?: Payment; currency: string; notes?: string; status?: AppStatus; bank?: string; pinned?: boolean; use?: AppUse; platform?: AppPlatform; email?: string; hint?: string; nickname?: string; d: boolean;
-  selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps; blurAmounts?: boolean; isLocked?: boolean;
+  selectMode: boolean; isSelected: boolean; viewMode: "grid" | "list"; cardProps: CardProps; blurAmounts?: boolean; isLocked?: boolean; monthlyVariableSpend?: number;
   onOpen: () => void; onToggleSelect: () => void;
 }) {
+  function fmtSpend(n: number) {
+    try { return new Intl.NumberFormat("en", { style: "currency", currency: currency || "USD", maximumFractionDigits: 2 }).format(n); }
+    catch { return `${n} ${currency}`; }
+  }
   const bankData = bank ? bankCatalog.find((b) => b.name === bank) : null;
   const daysUntilDue = payment ? getDaysUntilDue(payment) : null;
   const dueSoon = daysUntilDue !== null && daysUntilDue >= 0 && daysUntilDue <= 7 && status !== "cancelled" && status !== "trial";
@@ -126,6 +130,14 @@ export function AppCard({ app, url, payment, currency, notes, status, bank, pinn
           {!selectMode && cardProps.payment && showPaymentInfo && payment && (
             <div className="mt-1.5"><PaymentBadge payment={payment} currency={currency} d={d} blur={blurAmounts} /></div>
           )}
+          {/* Variable spending badge */}
+          {!selectMode && cardProps.payment && showPaymentInfo && monthlyVariableSpend !== undefined && monthlyVariableSpend > 0 && (
+            <div className="mt-1">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"}`}>
+                {blurAmounts ? <span className="blur-sm select-none">{fmtSpend(monthlyVariableSpend)}/mo</span> : `${fmtSpend(monthlyVariableSpend)}/mo`}
+              </span>
+            </div>
+          )}
 
           {/* Method chip */}
           {!selectMode && cardProps.method && payment?.method && !isTrial && !isCancelled && (
@@ -229,6 +241,11 @@ export function AppCard({ app, url, payment, currency, notes, status, bank, pinn
         {!selectMode && (
           <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
             {cardProps.payment && showPaymentInfo && payment && <PaymentBadge payment={payment} currency={currency} d={d} blur={blurAmounts} />}
+            {cardProps.payment && showPaymentInfo && monthlyVariableSpend !== undefined && monthlyVariableSpend > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"}`}>
+                {blurAmounts ? <span className="blur-sm select-none">{fmtSpend(monthlyVariableSpend)}/mo</span> : `${fmtSpend(monthlyVariableSpend)}/mo`}
+              </span>
+            )}
             {cardProps.method && payment?.method && !isTrial && !isCancelled && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${d ? "bg-white/10 text-gray-400" : "bg-gray-100 text-gray-500"}`}>{METHOD_LABEL[payment.method]}</span>
             )}
